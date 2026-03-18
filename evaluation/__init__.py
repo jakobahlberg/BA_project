@@ -1,18 +1,5 @@
-"""
-evaluation/__init__.py
-──────────────────────
-Public API for the evaluation package.
-
-Import from here rather than from individual layer files:
-
-    from evaluation import evaluate_game, summarise_results, load_judge_model
-    from evaluation.records import GameRecord, EvaluationResult
-"""
-
 from __future__ import annotations
-
 from typing import Dict, List
-
 import numpy as np
 
 from evaluation.records import GameRecord, EvaluationResult

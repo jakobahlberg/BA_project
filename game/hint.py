@@ -15,6 +15,7 @@ import config
 from evaluation.records import GameRecord
 from game.base import BaseGame
 from models import generate_answer
+from word_bank.hints import get_hints_for_secret
 
 try:
     import fitz         # PyMuPDF — reads hints back from PDF
@@ -49,21 +50,14 @@ class HintGame(BaseGame):
         secret_model,
         secret_tokenizer,
         guesser_system_prompt: str,
-        hints: list[str],
     ) -> None:
-        """
-        Args:
-            hints: Ordered list of hint strings. Revealed one at a time via USE_HINT.
-                   Should progress from vague to specific.
-            (all other args: see BaseGame.__init__)
-        """
         super().__init__(
             secret_prompt, secret_label, round_number,
             guesser_model, guesser_tokenizer,
             secret_model, secret_tokenizer,
             guesser_system_prompt,
         )
-        self.hints      = hints
+        self.hints      = get_hints_for_secret(secret_label)
         self.hints_used = 0
         self._hints_pdf_path = f"hints_{self.secret_label.replace(' ', '_')}_r{round_number}.pdf"
 

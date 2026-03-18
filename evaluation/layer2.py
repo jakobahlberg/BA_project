@@ -1,21 +1,6 @@
-"""
-evaluation/layer2.py
-────────────────────
-Layer 2: Question Quality metrics.
-
-Three sub-scores:
-  - Semantic relevance:   how related questions are to the secret (embedding cosine sim)
-  - Canonical coverage:   how many distinct question dimensions were covered
-  - Information gain:     how much each question narrowed the candidate pool
-
-Requires dataset.json and the sentence-transformers embedding model.
-"""
-
 from __future__ import annotations
-
 import json
 from typing import Dict, List, Optional, Tuple
-
 import numpy as np
 from sentence_transformers import SentenceTransformer
 

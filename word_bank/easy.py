@@ -19,6 +19,7 @@ SECRETS = [
 Reply with only one word.
 If the message starts with "My guess is:" and the guess is "dog": reply CORRECT.
 If the message starts with "My guess is:" and the guess is anything else: reply WRONG.
+If the message does NOT start with "My guess is:", you MUST answer ONLY YES or NO.
 If asked a yes/no question (including "Is it a dog?"): reply YES or NO.
 A dog IS a mammal. A mammal IS an animal.
 So: "is it an animal" = YES. "is it a mammal" = YES. "is it a dog" = YES. "is it a pet" = YES.
@@ -32,6 +33,7 @@ One word only. No punctuation. No explanation.""",
 Reply with only one word.
 If the message starts with "My guess is:" and the guess is "cat": reply CORRECT.
 If the message starts with "My guess is:" and the guess is anything else: reply WRONG.
+If the message does NOT start with "My guess is:", you MUST answer ONLY YES or NO.
 If asked a yes/no question (including "Is it a cat?"): reply YES or NO.
 A cat IS a mammal. A mammal IS an animal.
 So: "is it an animal" = YES. "is it a mammal" = YES. "is it a cat" = YES. "is it a pet" = YES.
@@ -45,6 +47,7 @@ One word only. No punctuation. No explanation.""",
 Reply with only one word.
 If the message starts with "My guess is:" and the guess is "elephant": reply CORRECT.
 If the message starts with "My guess is:" and the guess is anything else: reply WRONG.
+If the message does NOT start with "My guess is:", you MUST answer ONLY YES or NO.
 If asked a yes/no question (including "Is it an elephant?"): reply YES or NO.
 An elephant IS a mammal. A mammal IS an animal. An elephant IS a wild animal. An elephant IS larger than a car.
 So: "is it an animal" = YES. "is it a mammal" = YES. "is it large" = YES. "is it an elephant" = YES.
@@ -60,6 +63,7 @@ One word only. No punctuation. No explanation.""",
 Reply with only one word.
 If the message starts with "My guess is:" and the guess is "apple": reply CORRECT.
 If the message starts with "My guess is:" and the guess is anything else: reply WRONG.
+If the message does NOT start with "My guess is:", you MUST answer ONLY YES or NO.
 If asked a yes/no question (including "Is it an apple?"): reply YES or NO.
 An apple IS a fruit. A fruit IS food. Food IS something you can eat.
 So: "is it food" = YES. "is it a fruit" = YES. "is it an apple" = YES.
@@ -73,6 +77,7 @@ One word only. No punctuation. No explanation.""",
 Reply with only one word.
 If the message starts with "My guess is:" and the guess is "pizza": reply CORRECT.
 If the message starts with "My guess is:" and the guess is anything else: reply WRONG.
+If the message does NOT start with "My guess is:", you MUST answer ONLY YES or NO.
 If asked a yes/no question (including "Is it pizza?"): reply YES or NO.
 Pizza IS food. Food IS something you can eat.
 So: "is it food" = YES. "is it something you eat" = YES. "is it pizza" = YES.
@@ -86,6 +91,7 @@ One word only. No punctuation. No explanation.""",
 Reply with only one word.
 If the message starts with "My guess is:" and the guess is "banana": reply CORRECT.
 If the message starts with "My guess is:" and the guess is anything else: reply WRONG.
+If the message does NOT start with "My guess is:", you MUST answer ONLY YES or NO.
 If asked a yes/no question (including "Is it a banana?"): reply YES or NO.
 A banana IS a fruit. A fruit IS food. Food IS something you can eat.
 So: "is it food" = YES. "is it a fruit" = YES. "is it a banana" = YES.
@@ -101,6 +107,7 @@ One word only. No punctuation. No explanation.""",
 Reply with only one word.
 If the message starts with "My guess is:" and the guess is "chair": reply CORRECT.
 If the message starts with "My guess is:" and the guess is anything else: reply WRONG.
+If the message does NOT start with "My guess is:", you MUST answer ONLY YES or NO.
 If asked a yes/no question (including "Is it a chair?"): reply YES or NO.
 A chair IS furniture. Furniture IS a man-made object. A chair IS found indoors.
 So: "is it man-made" = YES. "is it furniture" = YES. "is it found indoors" = YES. "is it a chair" = YES.
@@ -114,6 +121,7 @@ One word only. No punctuation. No explanation.""",
 Reply with only one word.
 If the message starts with "My guess is:" and the guess is "ball": reply CORRECT.
 If the message starts with "My guess is:" and the guess is anything else: reply WRONG.
+If the message does NOT start with "My guess is:", you MUST answer ONLY YES or NO.
 If asked a yes/no question (including "Is it a ball?"): reply YES or NO.
 A ball IS a man-made object. A ball IS used in sports. A ball IS a toy.
 So: "is it man-made" = YES. "is it used in sports" = YES. "is it a toy" = YES. "is it a ball" = YES.
@@ -127,6 +135,7 @@ One word only. No punctuation. No explanation.""",
 Reply with only one word.
 If the message starts with "My guess is:" and the guess is "mug": reply CORRECT.
 If the message starts with "My guess is:" and the guess is anything else: reply WRONG.
+If the message does NOT start with "My guess is:", you MUST answer ONLY YES or NO.
 If asked a yes/no question (including "Is it a mug?"): reply YES or NO.
 A mug IS a man-made object. A mug IS used for drinking. A mug IS found indoors.
 So: "is it man-made" = YES. "is it used for drinking" = YES. "can you hold it in one hand" = YES. "is it a mug" = YES.

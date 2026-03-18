@@ -1,0 +1,2 @@
+run_id,seed,mode,guesser_model,secret_model,num_games,num_wins,avg_win_score,avg_efficiency_score,avg_secret_reliability_score,avg_semantic_relevance_score,avg_canonical_coverage_score,avg_information_gain_score,avg_llm_judge_strategy,avg_llm_judge_question_quality,avg_llm_judge_logical_consistency,avg_llm_judge_secret_accuracy,avg_diversity,energy_kwh,energy_per_game_wh,co2_g,co2_per_game_g
+slurm-5452,,easy,Qwen/Qwen3.5-4B,Qwen/Qwen3.5-4B,9,6,0.667,0.389,1.0,0.665,0.634,0.427,0.901,0.951,1.0,1.0,0.2331,0.021339734031,2.371082,3.057992849267,0.339777

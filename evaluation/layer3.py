@@ -1,17 +1,3 @@
-"""
-evaluation/layer3.py
-────────────────────
-Layer 3: LLM-as-a-Judge evaluation using Qwen3-8B.
-
-A single model call scores 4 dimensions of game quality:
-  - Strategy:            Did the guesser narrow candidates efficiently?
-  - Question quality:    Were questions clear and non-redundant?
-  - Logical consistency: Did the guesser stay consistent with prior answers?
-  - Secret accuracy:     Did the secret keeper answer factually correctly?
-
-The judge model is loaded once via load_judge_model() and cached globally.
-"""
-
 from __future__ import annotations
 
 import re
@@ -23,11 +9,9 @@ from transformers import AutoModelForCausalLM, AutoTokenizer
 
 from evaluation.records import GameRecord
 
-# ─── Global judge model cache ────────────────────────────────────────────────
 _JUDGE_MODEL: Optional[AutoModelForCausalLM] = None
 _JUDGE_TOKENIZER: Optional[AutoTokenizer] = None
 
-# ─── Judge prompt ─────────────────────────────────────────────────────────────
 _JUDGE_PROMPT_TEMPLATE = """You are an expert evaluator for 20 Questions games.
 
 SECRET: {secret}
@@ -166,7 +150,6 @@ def layer3_llm_judge(
 
     generated = output_ids[0][inputs.input_ids.shape[-1]:]
     raw = _JUDGE_TOKENIZER.decode(generated, skip_special_tokens=True).strip()
-    print(f"[Judge raw output]:\n{raw}")
 
     dims = ("STRATEGY", "QUESTION_QUALITY", "LOGICAL_CONSISTENCY", "SECRET_ACCURACY")
     scores:    Dict[str, float] = {}

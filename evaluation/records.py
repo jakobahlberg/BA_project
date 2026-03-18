@@ -83,7 +83,7 @@ class EvaluationResult:
             "  Diversity per question (higher = more novel than prior questions):",
             div_str,
             "",
-            "LAYER 3 — Prometheus Judge",
+            "LAYER 3 — Judge",
             f"  Strategy              : {self.llm_judge_strategy:.3f}",
         ]
         if "strategy" in feedbacks:

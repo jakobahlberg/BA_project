@@ -1,20 +1,8 @@
-"""
-evaluation/layer1.py
-────────────────────
-Layer 1: Game Outcome metrics.
-
-Scores are based purely on whether the guesser won, how quickly,
-and how reliably the secret keeper responded.
-"""
-
 from __future__ import annotations
-
 from typing import Tuple
-
 from evaluation.records import GameRecord
 
 _VALID_SECRET_RESPONSES = {"YES", "NO", "CORRECT", "WRONG"}
-
 
 def layer1_game_outcome(record: GameRecord) -> Tuple[float, float, float, float]:
     """

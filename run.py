@@ -15,10 +15,24 @@ The MODE flag in config.py selects which secrets and game class to use:
 from __future__ import annotations
 
 import os
+import random
 
+import torch
 from carbontracker.tracker import CarbonTracker
 
 import config
+
+
+def _seed_everything(seed: int) -> None:
+    random.seed(seed)
+    torch.manual_seed(seed)
+    if torch.cuda.is_available():
+        torch.cuda.manual_seed_all(seed)
+
+
+EXPERIMENT_SEED = int(os.environ.get("EXPERIMENT_SEED", "42"))
+_seed_everything(EXPERIMENT_SEED)
+print(f"Experiment seed: {EXPERIMENT_SEED}")
 from evaluation import evaluate_game, load_judge_model, summarise_results
 from models import load_model
 
@@ -81,7 +95,6 @@ def main() -> None:
                 secret_model=secret_model,
                 secret_tokenizer=secret_tokenizer,
                 guesser_system_prompt=guesser_prompt,
-                hints=secret.hints,
             )
         else:
             game = GameClass(
@@ -141,6 +154,10 @@ def main() -> None:
     summary = summarise_results(eval_results)
     for k, v in summary.items():
         print(f"  {k}: {v:.3f}" if isinstance(v, float) else f"  {k}: {v}")
+
+    print(f"\nguesser_model_name: {config.GUESSER_MODEL}")
+    print(f"secret_model_name:  {config.SECRET_MODEL}")
+    print(f"experiment_seed:    {EXPERIMENT_SEED}")
 
 
 if __name__ == "__main__":
