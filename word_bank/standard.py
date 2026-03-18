@@ -6,7 +6,7 @@ Standard difficulty secrets (9 rounds: 3 animals, 3 foods, 3 objects).
 Labels match the "name" field in dataset.json for full information-gain scoring.
 """
 
-from secrets import SecretEntry
+from word_bank import SecretEntry
 
 SECRETS = [
     # ── Animals ────────────────────────────────────────────────────────────

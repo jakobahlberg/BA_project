@@ -7,7 +7,7 @@
 #SBATCH --mem=96G
 #SBATCH --time=02:00:00
 #SBATCH --output=slurm-%j.out
-#SBATCH --exclude=hendrixgpu26fl,hendrixgpu17fl,hendrixgpu13fl
+#SBATCH --exclude=hendrixgpu26fl,hendrixgpu17fl
 
 module load python/3.12.8
 module load cuda/11.8

@@ -28,17 +28,17 @@ def main() -> None:
 
     # ── Select mode ──────────────────────────────────────────────────────────
     if config.MODE == "standard":
-        from secrets.standard import SECRETS
+        from word_bank.standard import SECRETS
         from game.base import BaseGame as GameClass
         from prompts import GUESSER_SYSTEM_PROMPT as guesser_prompt
 
     elif config.MODE == "easy":
-        from secrets.easy import SECRETS
+        from word_bank.easy import SECRETS
         from game.base import BaseGame as GameClass
         from prompts import GUESSER_SYSTEM_PROMPT as guesser_prompt
 
     elif config.MODE == "hint":
-        from secrets.hint import SECRETS
+        from word_bank.hint import SECRETS
         from game.hint import HintGame as GameClass
         from prompts import HINT_GUESSER_SYSTEM_PROMPT as guesser_prompt
 
