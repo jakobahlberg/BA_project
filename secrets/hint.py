@@ -1,0 +1,201 @@
+"""
+secrets/hint.py
+───────────────
+Hint mode secrets (9 rounds: 3 animals, 3 foods, 3 objects).
+
+Each entry includes an ordered list of 5 hints, revealed one at a time
+when the guesser issues USE_HINT. Hints progress from vague to specific
+so early hints still require reasoning.
+
+Labels match the "name" field in dataset.json for full information-gain scoring.
+"""
+
+from secrets import SecretEntry
+
+SECRETS = [
+    # ── Animals ────────────────────────────────────────────────────────────
+    SecretEntry(
+        label="dog",
+        category="animal",
+        system_prompt="""You are playing 20 questions. The secret is: dog.
+
+Reply with only one word.
+If the message starts with "My guess is:" and the guess is "dog": reply CORRECT.
+If the message starts with "My guess is:" and the guess is anything else: reply WRONG.
+If asked a yes/no question (including "Is it a dog?"): reply YES or NO.
+A dog IS a mammal. A mammal IS an animal.
+So: "is it an animal" = YES. "is it a mammal" = YES. "is it a dog" = YES. "is it a pet" = YES.
+One word only. No punctuation. No explanation.""",
+        hints=[
+            "It is a living creature.",
+            "It is an animal.",
+            "It is a mammal.",
+            "It is commonly kept as a pet.",
+            "It is known for its loyalty and barking.",
+        ],
+    ),
+    SecretEntry(
+        label="cat",
+        category="animal",
+        system_prompt="""You are playing 20 questions. The secret is: cat.
+
+Reply with only one word.
+If the message starts with "My guess is:" and the guess is "cat": reply CORRECT.
+If the message starts with "My guess is:" and the guess is anything else: reply WRONG.
+If asked a yes/no question (including "Is it a cat?"): reply YES or NO.
+A cat IS a mammal. A mammal IS an animal.
+So: "is it an animal" = YES. "is it a mammal" = YES. "is it a cat" = YES. "is it a pet" = YES.
+One word only. No punctuation. No explanation.""",
+        hints=[
+            "It is a living creature.",
+            "It is an animal.",
+            "It is a mammal.",
+            "It is commonly kept as a pet.",
+            "It is known for purring and meowing.",
+        ],
+    ),
+    SecretEntry(
+        label="elephant",
+        category="animal",
+        system_prompt="""You are playing 20 questions. The secret is: elephant.
+
+Reply with only one word.
+If the message starts with "My guess is:" and the guess is "elephant": reply CORRECT.
+If the message starts with "My guess is:" and the guess is anything else: reply WRONG.
+If asked a yes/no question (including "Is it an elephant?"): reply YES or NO.
+An elephant IS a mammal. A mammal IS an animal. An elephant IS larger than a car.
+So: "is it an animal" = YES. "is it a mammal" = YES. "is it large" = YES. "is it an elephant" = YES.
+One word only. No punctuation. No explanation.""",
+        hints=[
+            "It is a living creature.",
+            "It is an animal.",
+            "It is a mammal.",
+            "It is much larger than a car.",
+            "It has a long nose called a trunk.",
+        ],
+    ),
+
+    # ── Foods ──────────────────────────────────────────────────────────────
+    SecretEntry(
+        label="apple",
+        category="food",
+        system_prompt="""You are playing 20 questions. The secret is: apple.
+
+Reply with only one word.
+If the message starts with "My guess is:" and the guess is "apple": reply CORRECT.
+If the message starts with "My guess is:" and the guess is anything else: reply WRONG.
+If asked a yes/no question (including "Is it an apple?"): reply YES or NO.
+An apple IS a fruit. A fruit IS food. Food IS something you can eat.
+So: "is it food" = YES. "is it a fruit" = YES. "is it an apple" = YES.
+One word only. No punctuation. No explanation.""",
+        hints=[
+            "It is not alive.",
+            "You can eat it.",
+            "It grows on a tree.",
+            "It is a fruit.",
+            "It is typically red or green.",
+        ],
+    ),
+    SecretEntry(
+        label="pizza",
+        category="food",
+        system_prompt="""You are playing 20 questions. The secret is: pizza.
+
+Reply with only one word.
+If the message starts with "My guess is:" and the guess is "pizza": reply CORRECT.
+If the message starts with "My guess is:" and the guess is anything else: reply WRONG.
+If asked a yes/no question (including "Is it pizza?"): reply YES or NO.
+Pizza IS food. Food IS something you can eat.
+So: "is it food" = YES. "is it something you eat" = YES. "is it pizza" = YES.
+One word only. No punctuation. No explanation.""",
+        hints=[
+            "It is not alive.",
+            "You can eat it.",
+            "It is a prepared food dish.",
+            "It is round and flat.",
+            "It is topped with cheese and tomato sauce.",
+        ],
+    ),
+    SecretEntry(
+        label="banana",
+        category="food",
+        system_prompt="""You are playing 20 questions. The secret is: banana.
+
+Reply with only one word.
+If the message starts with "My guess is:" and the guess is "banana": reply CORRECT.
+If the message starts with "My guess is:" and the guess is anything else: reply WRONG.
+If asked a yes/no question (including "Is it a banana?"): reply YES or NO.
+A banana IS a fruit. A fruit IS food. Food IS something you can eat.
+So: "is it food" = YES. "is it a fruit" = YES. "is it a banana" = YES.
+One word only. No punctuation. No explanation.""",
+        hints=[
+            "It is not alive.",
+            "You can eat it.",
+            "It is a fruit.",
+            "It is yellow when ripe.",
+            "It has a long curved shape.",
+        ],
+    ),
+
+    # ── Objects ────────────────────────────────────────────────────────────
+    SecretEntry(
+        label="chair",
+        category="object",
+        system_prompt="""You are playing 20 questions. The secret is: chair.
+
+Reply with only one word.
+If the message starts with "My guess is:" and the guess is "chair": reply CORRECT.
+If the message starts with "My guess is:" and the guess is anything else: reply WRONG.
+If asked a yes/no question (including "Is it a chair?"): reply YES or NO.
+A chair IS furniture. Furniture IS a man-made object. A chair IS found indoors.
+So: "is it man-made" = YES. "is it furniture" = YES. "is it found indoors" = YES. "is it a chair" = YES.
+One word only. No punctuation. No explanation.""",
+        hints=[
+            "It is not alive.",
+            "It is man-made.",
+            "It is found indoors.",
+            "It is a piece of furniture.",
+            "It is used for sitting.",
+        ],
+    ),
+    SecretEntry(
+        label="ball",
+        category="object",
+        system_prompt="""You are playing 20 questions. The secret is: ball.
+
+Reply with only one word.
+If the message starts with "My guess is:" and the guess is "ball": reply CORRECT.
+If the message starts with "My guess is:" and the guess is anything else: reply WRONG.
+If asked a yes/no question (including "Is it a ball?"): reply YES or NO.
+A ball IS a man-made object. A ball IS used in sports. A ball IS a toy.
+So: "is it man-made" = YES. "is it used in sports" = YES. "is it a toy" = YES. "is it a ball" = YES.
+One word only. No punctuation. No explanation.""",
+        hints=[
+            "It is not alive.",
+            "It is man-made.",
+            "It is used for play or sport.",
+            "It is spherical in shape.",
+            "You can throw, kick, or bounce it.",
+        ],
+    ),
+    SecretEntry(
+        label="mug",
+        category="object",
+        system_prompt="""You are playing 20 questions. The secret is: mug.
+
+Reply with only one word.
+If the message starts with "My guess is:" and the guess is "mug": reply CORRECT.
+If the message starts with "My guess is:" and the guess is anything else: reply WRONG.
+If asked a yes/no question (including "Is it a mug?"): reply YES or NO.
+A mug IS a man-made object. A mug IS used for drinking. A mug IS found indoors.
+So: "is it man-made" = YES. "is it used for drinking" = YES. "can you hold it in one hand" = YES. "is it a mug" = YES.
+One word only. No punctuation. No explanation.""",
+        hints=[
+            "It is not alive.",
+            "It is man-made.",
+            "It is found indoors.",
+            "It is used for drinking.",
+            "It has a handle on the side.",
+        ],
+    ),
+]
