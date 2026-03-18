@@ -1,0 +1,23 @@
+# Environment & secrets
+.env
+*.env
+
+# macOS
+.DS_Store
+
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+.venv/
+venv/
+env/
+
+# Outputs & logs
+outputs/
+carbon_logs/
+*.out
+*.log
+
+# Jupyter
+.ipynb_checkpoints/
