@@ -4,6 +4,7 @@ import torch
 import os
 import json
 import random
+import requests
 from typing import Dict, List, Optional, Tuple
 
 from evaluate import GameRecord
@@ -12,6 +13,7 @@ os.environ["HUGGINGFACE_HUB_TOKEN"] = "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"
 
 MAX_TURNS = 20
 MAX_HINTS = 5
+MAX_WEB_SEARCHES = 2
 
 
 EXPERIMENT_SEED = int(os.environ.get("EXPERIMENT_SEED", "42"))
@@ -109,7 +111,12 @@ ACTION 3 — Use a hint (when stuck)
 Format exactly:
 USE_HINT
 
+ACTION 4 — Search the web (sparingly, when uncertain)
+Format exactly:
+WEB_SEARCH: <short query>
+
 Hints available: {max_hints}
+Web searches available: {max_web_searches}
 Hints are valuable and should be used early when uncertain.
 If you are still unsure after ~4 questions, consider using USE_HINT.
 
@@ -130,6 +137,7 @@ STRICT RULES:
 - If evidence strongly supports a category and a guess within that category is wrong, do NOT switch categories; stay in that category and refine using distinguishing sub-features (type, size, color, habitat, function).
 - Never ask or guess a category that contradicts a confirmed YES answer (e.g., if DOG=YES, do not ask/guess CAT).
 - After a wrong guess, restate the strongest confirmed facts in your next question and refine based on them.
+- Use WEB_SEARCH sparingly for clarification when you are stuck or uncertain between close candidates.
 - Output exactly one line.
 - No explanations.
 - No extra text.
@@ -212,6 +220,8 @@ def parse_guesser_output(text: str) -> Tuple[str, Optional[str]]:
 
     if upper_first == "USE_HINT" or "USE_HINT" in upper_first:
         return "hint", None
+    if upper_first.startswith("WEB_SEARCH:"):
+        return "web_search", first.split(":", 1)[-1].strip()
     if upper_first.startswith("QUESTION:"):
         return "question", first.split(":", 1)[-1].strip()
     if upper_first.startswith("GUESS:"):
@@ -224,6 +234,8 @@ def parse_guesser_output(text: str) -> Tuple[str, Optional[str]]:
             return "guess", ln.split(":", 1)[-1].strip()
         if up.startswith("QUESTION:"):
             return "question", ln.split(":", 1)[-1].strip()
+        if up.startswith("WEB_SEARCH:"):
+            return "web_search", ln.split(":", 1)[-1].strip()
         if up == "USE_HINT" or "USE_HINT" in up:
             return "hint", None
 
@@ -310,15 +322,49 @@ def get_hints_for_secret(secret_label: str) -> List[str]:
     return _hints_from_attributes(obj)
 
 
+def run_web_search(query: str) -> str:
+    """Simple DuckDuckGo instant-answer search helper."""
+    q = query.strip()
+    if not q:
+        return "No query provided."
+    try:
+        resp = requests.get(
+            "https://api.duckduckgo.com/",
+            params={"q": q, "format": "json", "no_html": 1, "no_redirect": 1, "skip_disambig": 1},
+            timeout=8,
+        )
+        resp.raise_for_status()
+        data = resp.json()
 
-    q = question.strip().lower()
-    s = secret_label.strip().lower()
-    if not q or not s:
-        return False
-    # Only treat direct identity questions as guesses
-    if not (q.startswith("is it") or q.startswith("is this") or q.startswith("is that")):
-        return False
-    return s in q
+        snippets = []
+        abstract = (data.get("AbstractText") or "").strip()
+        heading = (data.get("Heading") or "").strip()
+        if abstract:
+            if heading:
+                snippets.append(f"{heading}: {abstract}")
+            else:
+                snippets.append(abstract)
+
+        for item in data.get("RelatedTopics", []):
+            if isinstance(item, dict):
+                txt = (item.get("Text") or "").strip()
+                if txt:
+                    snippets.append(txt)
+                for sub in item.get("Topics", []) if isinstance(item.get("Topics"), list) else []:
+                    stxt = (sub.get("Text") or "").strip()
+                    if stxt:
+                        snippets.append(stxt)
+            if len(snippets) >= 3:
+                break
+
+        if not snippets:
+            return "No concise web result found."
+
+        return " | ".join(snippets[:3])
+    except Exception as e:
+        return f"Web search unavailable: {e}"
+
+
 def play_round(secret_system_prompt: str, round_number: int, secret_label: str = "") -> GameRecord:
     """
     Run one game of 20 Questions and return a fully-populated GameRecord
@@ -339,6 +385,7 @@ def play_round(secret_system_prompt: str, round_number: int, secret_label: str =
     hints = get_hints_for_secret(secret_label)
     max_hints = len(hints)
     hints_used = 0
+    web_searches_used = 0
     questions_since_hint = 0
 
     def use_hint() -> str:
@@ -350,9 +397,20 @@ def play_round(secret_system_prompt: str, round_number: int, secret_label: str =
         print(f"[HINT TOOL] Hint {hints_used} revealed: {hint_text}")
         return hint_text
 
+    def use_web_search(query: str) -> str:
+        nonlocal web_searches_used
+        if web_searches_used >= MAX_WEB_SEARCHES:
+            return "No more web searches available."
+        web_searches_used += 1
+        result = run_web_search(query)
+        print(f"[WEB SEARCH TOOL] Query {web_searches_used}/{MAX_WEB_SEARCHES}: {query}")
+        print(f"[WEB SEARCH TOOL] Result: {result}")
+        return result
+
     guesser_system_prompt = GUESSER_SYSTEM_PROMPT_TEMPLATE.format(
         max_turns=MAX_TURNS,
         max_hints=max_hints,
+        max_web_searches=MAX_WEB_SEARCHES,
     )
 
     guesser_messages = [
@@ -378,6 +436,15 @@ def play_round(secret_system_prompt: str, round_number: int, secret_label: str =
             guesser_messages.append({
                 "role": "user",
                 "content": f"[HINT] {hint_text}\nNow continue — ask a question or make a guess."
+            })
+            continue
+
+        if action == "web_search":
+            query = content or ""
+            search_text = use_web_search(query)
+            guesser_messages.append({
+                "role": "user",
+                "content": f"[WEB_SEARCH] query: {query}\n[WEB_SEARCH_RESULT] {search_text}\nNow continue — ask a question or make a guess."
             })
             continue
 
