@@ -25,6 +25,7 @@ class GameRecord:
     turn_log: List[Tuple[str, str, str]]  # (action, content, raw_response) per turn
     max_turns: int = 20
     hints_used: int = 0            # Number of hints consumed (hint mode only)
+    raw_transcript: str = ""       # Raw printed game log from start to end
 
 
 @dataclass
@@ -48,7 +49,9 @@ class EvaluationResult:
     llm_judge_question_quality: float
     llm_judge_logical_consistency: float
     llm_judge_secret_accuracy: float
+    llm_judge_guesser_format: float
     layer3_score: float
+    judge_won: bool                # Judge's verdict from raw transcript
 
     details: Dict = field(default_factory=dict)
 
@@ -97,7 +100,12 @@ class EvaluationResult:
         lines += [f"  Secret accuracy       : {self.llm_judge_secret_accuracy:.3f}"]
         if "secret_accuracy" in feedbacks:
             lines.append(f"    → {feedbacks['secret_accuracy']}")
+        lines += [f"  Guesser format        : {self.llm_judge_guesser_format:.3f}"]
+        if "guesser_format" in feedbacks:
+            lines.append(f"    → {feedbacks['guesser_format']}")
+        outcome_match = self.judge_won == bool(self.win_score)
         lines += [
+            f"  Judge won             : {self.judge_won} {'✓' if outcome_match else '✗ (disagrees with layer 1)'}",
             f"  Layer 3 score         : {self.layer3_score:.3f}",
             "=" * 55,
         ]

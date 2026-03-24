@@ -15,12 +15,11 @@ _JUDGE_TOKENIZER: Optional[AutoTokenizer] = None
 _JUDGE_PROMPT_TEMPLATE = """You are an expert evaluator for 20 Questions games.
 
 SECRET: {secret}
-OUTCOME: {outcome} in {turns}/{max_turns} turns
 
 TRANSCRIPT:
 {transcript}
 
-Score the game on 4 dimensions. For each, write ONE sentence of reasoning then an integer score 1-10.
+Score the game on 6 dimensions. For each, write ONE sentence of reasoning then an integer score 1-10.
 
 STRATEGY: Did the guesser use binary search to efficiently narrow down candidates?
   10 = optimal bisection each turn | 1 = random or repetitive questions with no narrowing
@@ -34,6 +33,11 @@ LOGICAL_CONSISTENCY: Did the guesser stay consistent with all prior answers?
 SECRET_ACCURACY: Did the secret keeper give factually correct YES/NO responses?
   10 = every answer was factually correct | 1 = multiple wrong or contradictory answers
 
+GUESSER_FORMAT: Did the guesser strictly follow the expected format (QUESTION: / GUESS: prefixes, one action per turn, no extra commentary)?
+  10 = perfect format every turn | 1 = frequent format violations or extra text
+
+Also determine whether the guesser won based solely on the transcript.
+
 Reply in EXACTLY this format, nothing else:
 STRATEGY_REASON: <one sentence>
 STRATEGY: <1-10>
@@ -42,7 +46,10 @@ QUESTION_QUALITY: <1-10>
 LOGICAL_CONSISTENCY_REASON: <one sentence>
 LOGICAL_CONSISTENCY: <1-10>
 SECRET_ACCURACY_REASON: <one sentence>
-SECRET_ACCURACY: <1-10>"""
+SECRET_ACCURACY: <1-10>
+GUESSER_FORMAT_REASON: <one sentence>
+GUESSER_FORMAT: <1-10>
+JUDGE_WON: <YES or NO>"""
 
 
 def load_judge_model(model_name: str) -> None:
@@ -66,39 +73,15 @@ def load_judge_model(model_name: str) -> None:
     print("[Evaluator] Judge model loaded.")
 
 
-def _build_transcript(record: GameRecord) -> str:
-    """
-    Build a clean, numbered transcript string from turn_log.
-
-    Falls back to reconstructing from questions/answers/guesses if
-    turn_log is empty (e.g. from older GameRecord formats).
-    """
-    if not record.turn_log:
-        lines = []
-        for i, (q, a) in enumerate(zip(record.questions, record.answers), 1):
-            lines.append(f"Turn {i}: Q: {q}  →  {a}")
-        for g in record.guesses:
-            outcome = "CORRECT" if record.was_correct and g == record.final_guess else "WRONG"
-            lines.append(f"GUESS: {g}  →  {outcome}")
-        return "\n".join(lines) if lines else "(no turns recorded)"
-
-    lines = []
-    for i, (action, content, response) in enumerate(record.turn_log, 1):
-        if action == "question":
-            lines.append(f"Turn {i}: Q: {content}  →  {response}")
-        else:
-            outcome = "CORRECT" if record.was_correct and content == record.final_guess else "WRONG"
-            lines.append(f"Turn {i}: GUESS: {content}  →  {outcome}")
-    return "\n".join(lines)
-
 
 def layer3_llm_judge(
     record: GameRecord,
     judge_model_name: str = "Qwen/Qwen3-8B",
-    max_new_tokens: int = 256,
-) -> Tuple[float, float, float, float, float, Dict[str, str]]:
+    max_new_tokens: int = 384,
+) -> Tuple[float, float, float, float, float, float, float, bool, Dict[str, str]]:
     """
-    Score a game on 4 quality dimensions using a single LLM call.
+    Score a game on 5 quality dimensions using a single LLM call, and determine
+    whether the guesser won according to the transcript.
 
     Scores are parsed from the model output and normalised to [0, 1].
     If a score cannot be parsed, it defaults to 0.5 with a warning.
@@ -110,8 +93,9 @@ def layer3_llm_judge(
 
     Returns:
         (strategy, question_quality, logical_consistency, secret_accuracy,
-         layer3_score, feedbacks_dict)
-        All scores in [0, 1]. layer3_score is the mean of the four.
+         guesser_format, layer3_score, judge_won, feedbacks_dict)
+        All scores in [0, 1]. layer3_score is the mean of the five.
+        judge_won is the judge's determination of game outcome from the transcript.
         feedbacks_dict maps dimension name → one-sentence reason string.
     """
     global _JUDGE_MODEL, _JUDGE_TOKENIZER
@@ -119,14 +103,10 @@ def layer3_llm_judge(
     if _JUDGE_MODEL is None:
         load_judge_model(judge_model_name)
 
-    transcript = _build_transcript(record)
-    outcome    = "WON" if record.was_correct else "LOST"
+    transcript = record.raw_transcript
 
     prompt = _JUDGE_PROMPT_TEMPLATE.format(
         secret=record.secret,
-        outcome=outcome,
-        turns=record.turns_used,
-        max_turns=record.max_turns,
         transcript=transcript,
     )
 
@@ -151,7 +131,8 @@ def layer3_llm_judge(
     generated = output_ids[0][inputs.input_ids.shape[-1]:]
     raw = _JUDGE_TOKENIZER.decode(generated, skip_special_tokens=True).strip()
 
-    dims = ("STRATEGY", "QUESTION_QUALITY", "LOGICAL_CONSISTENCY", "SECRET_ACCURACY")
+    dims = ("STRATEGY", "QUESTION_QUALITY", "LOGICAL_CONSISTENCY", "SECRET_ACCURACY",
+            "GUESSER_FORMAT")
     scores:    Dict[str, float] = {}
     feedbacks: Dict[str, str]  = {}
 
@@ -168,6 +149,13 @@ def layer3_llm_judge(
 
         feedbacks[dim.lower()] = reason_match.group(1).strip() if reason_match else ""
 
+    judge_won_match = re.search(r"^JUDGE_WON:\s*(YES|NO)", raw, re.MULTILINE)
+    if judge_won_match:
+        judge_won = judge_won_match.group(1) == "YES"
+    else:
+        print("  [Warning] Could not parse JUDGE_WON, defaulting to record.was_correct")
+        judge_won = record.was_correct
+
     layer3_score = float(np.mean(list(scores.values())))
 
     return (
@@ -175,6 +163,8 @@ def layer3_llm_judge(
         scores["question_quality"],
         scores["logical_consistency"],
         scores["secret_accuracy"],
+        scores["guesser_format"],
         layer3_score,
+        judge_won,
         feedbacks,
     )

@@ -196,7 +196,9 @@ class BaseGame:
         Returns:
             GameRecord with all questions, answers, guesses, and metadata.
         """
-        print(f"\n=== ROUND {self.round_number} START ===")
+        header = f"\n=== ROUND {self.round_number} START ==="
+        print(header)
+        transcript_lines: list[str] = [header]
 
         while self.turn < config.MAX_TURNS and not self.game_over:
 
@@ -208,29 +210,37 @@ class BaseGame:
                 self.guesser_messages, self.guesser_model, self.guesser_tokenizer
             )
             print(f"Guesser: {guesser_output}")
+            transcript_lines.append(f"Guesser: {guesser_output}")
 
             action, content = self._parse_action(guesser_output)
 
             if action == "question":
                 answer = self._handle_question(content)
                 print(f"Secret: {answer}")
+                transcript_lines.append(f"Secret: {answer}")
 
             elif action == "guess":
                 correct = self._handle_guess(content)
-                print(f"Secret: {'CORRECT' if correct else 'WRONG'}")
+                secret_line = f"Secret: {'CORRECT' if correct else 'WRONG'}"
+                print(secret_line)
+                transcript_lines.append(secret_line)
                 if correct:
                     print("Guesser won!")
+                    transcript_lines.append("Guesser won!")
                     self.game_over = True
 
             else:
                 # Malformed output — treat as a question to keep the game moving
                 answer = self._handle_question(content)
                 print(f"Secret: {answer}")
+                transcript_lines.append(f"Secret: {answer}")
 
             self.turn += 1
 
         if not self.game_over:
-            print(f"Guesser failed after {config.MAX_TURNS} turns")
+            failed_line = f"Guesser failed after {config.MAX_TURNS} turns"
+            print(failed_line)
+            transcript_lines.append(failed_line)
             if self.guesses:
                 self.final_guess = self.guesses[-1]
 
@@ -245,4 +255,5 @@ class BaseGame:
             secret_raw_responses=self.secret_raw_responses,
             turn_log=self.turn_log,
             max_turns=config.MAX_TURNS,
+            raw_transcript="\n".join(transcript_lines),
         )

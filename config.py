@@ -15,7 +15,7 @@ os.environ["HUGGINGFACE_HUB_TOKEN"] = HF_TOKEN
 
 # ─── Game mode ──────────────────────────────────────────────────────────────
 # Options: "standard" | "easy" | "hint"
-MODE = "easy"
+MODE = "standard"
 
 # ─── Models ─────────────────────────────────────────────────────────────────
 GUESSER_MODEL = "Qwen/Qwen3.5-4B"

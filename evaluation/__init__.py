@@ -35,11 +35,12 @@ def evaluate_game(
     )
 
     if run_judge:
-        strat, qq, lc, sa, l3, feedbacks = layer3_llm_judge(
+        strat, qq, lc, sa, gf, l3, judge_won, feedbacks = layer3_llm_judge(
             record, judge_model_name=judge_model_name
         )
     else:
-        strat = qq = lc = sa = l3 = 0.0
+        strat = qq = lc = sa = gf = l3 = 0.0
+        judge_won = record.was_correct
         feedbacks = {}
 
     return EvaluationResult(
@@ -55,7 +56,9 @@ def evaluate_game(
         llm_judge_question_quality=qq,
         llm_judge_logical_consistency=lc,
         llm_judge_secret_accuracy=sa,
+        llm_judge_guesser_format=gf,
         layer3_score=l3,
+        judge_won=judge_won,
         details={
             "secret": record.secret,
             "turns_used": record.turns_used,
@@ -88,11 +91,16 @@ def summarise_results(results: List[EvaluationResult]) -> Dict:
         "win_score", "efficiency_score", "secret_reliability_score", "layer1_score",
         "semantic_relevance_score", "canonical_coverage_score", "information_gain_score",
         "layer2_score", "llm_judge_strategy", "llm_judge_question_quality",
-        "llm_judge_logical_consistency", "llm_judge_secret_accuracy", "layer3_score",
+        "llm_judge_logical_consistency", "llm_judge_secret_accuracy",
+        "llm_judge_guesser_format", "layer3_score",
     ]
     summary: Dict = {}
     for f in fields:
         summary[f"avg_{f}"] = float(np.mean([getattr(r, f) for r in results]))
-    summary["num_games"] = len(results)
-    summary["num_wins"]  = int(sum(r.win_score for r in results))
+    summary["num_games"]       = len(results)
+    summary["num_wins"]        = int(sum(r.win_score for r in results))
+    summary["judge_win_count"] = int(sum(r.judge_won for r in results))
+    summary["judge_layer1_agreement"] = float(
+        np.mean([r.judge_won == bool(r.win_score) for r in results])
+    )
     return summary

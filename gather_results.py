@@ -11,10 +11,12 @@ SCORE_FIELDS = [
     "avg_semantic_relevance_score", "avg_canonical_coverage_score", "avg_information_gain_score",
     "avg_llm_judge_strategy", "avg_llm_judge_question_quality",
     "avg_llm_judge_logical_consistency", "avg_llm_judge_secret_accuracy",
+    "avg_llm_judge_guesser_format", "avg_layer3_score", "judge_layer1_agreement",
 ]
 
 CSV_COLUMNS = (
-    ["run_id", "seed", "mode", "guesser_model", "secret_model", "num_games", "num_wins"]
+    ["run_id", "seed", "mode", "guesser_model", "secret_model", "num_games", "num_wins",
+     "judge_win_count"]
     + SCORE_FIELDS
     + ["avg_diversity", "energy_kwh", "energy_per_game_wh", "co2_g", "co2_per_game_g"]
 )
@@ -50,7 +52,8 @@ def parse_out(path: str) -> dict | None:
         "guesser_model": get(r"Guesser model\s*:\s*(.+)"),
         "secret_model":  get(r"Secret model\s*:\s*(.+)"),
         "num_games":     num_games,
-        "num_wins":      get(r"num_wins\s*:\s*(\d+)", int),
+        "num_wins":         get(r"num_wins\s*:\s*(\d+)", int),
+        "judge_win_count":  get(r"judge_win_count\s*:\s*(\d+)", int),
         "energy_kwh":    energy_kwh,
         "energy_per_game_wh": round(energy_kwh / num_games * 1000, 6) if energy_kwh and num_games else None,
         "co2_g":         co2_g,

@@ -129,7 +129,9 @@ class HintGame(BaseGame):
         Returns:
             GameRecord with hints_used populated.
         """
-        print(f"\n=== ROUND {self.round_number} START (HINT MODE) ===")
+        header = f"\n=== ROUND {self.round_number} START (HINT MODE) ==="
+        print(header)
+        transcript_lines: list[str] = [header]
 
         while self.turn < config.MAX_TURNS and not self.game_over:
 
@@ -137,6 +139,7 @@ class HintGame(BaseGame):
                 self.guesser_messages, self.guesser_model, self.guesser_tokenizer
             )
             print(f"Guesser: {guesser_output}")
+            transcript_lines.append(f"Guesser: {guesser_output}")
 
             action, content = self._parse_action(guesser_output)
 
@@ -155,25 +158,33 @@ class HintGame(BaseGame):
             elif action == "question":
                 answer = self._handle_question(content)
                 print(f"Secret: {answer}")
+                transcript_lines.append(f"Secret: {answer}")
 
             elif action == "guess":
                 correct = self._handle_guess(content)
-                print(f"Secret: {'CORRECT' if correct else 'WRONG'}")
+                secret_line = f"Secret: {'CORRECT' if correct else 'WRONG'}"
+                print(secret_line)
+                transcript_lines.append(secret_line)
                 if correct:
-                    print(f"Guesser won in {self.turn + 1} turns using {self.hints_used} hints!")
+                    won_line = f"Guesser won in {self.turn + 1} turns using {self.hints_used} hints!"
+                    print(won_line)
+                    transcript_lines.append(won_line)
                     self.game_over = True
 
             else:
                 answer = self._handle_question(content)
                 print(f"Secret: {answer}")
+                transcript_lines.append(f"Secret: {answer}")
 
             self.turn += 1
 
         if not self.game_over:
-            print(
+            failed_line = (
                 f"Guesser failed after {config.MAX_TURNS} turns "
                 f"using {self.hints_used} hints."
             )
+            print(failed_line)
+            transcript_lines.append(failed_line)
             if self.guesses:
                 self.final_guess = self.guesses[-1]
 
@@ -189,4 +200,5 @@ class HintGame(BaseGame):
             turn_log=self.turn_log,
             max_turns=config.MAX_TURNS,
             hints_used=self.hints_used,
+            raw_transcript="\n".join(transcript_lines),
         )
