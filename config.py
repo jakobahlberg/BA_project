@@ -25,7 +25,7 @@ JUDGE_MODEL   = "Qwen/Qwen3-8B"
 # ─── Game settings ──────────────────────────────────────────────────────────
 MAX_TURNS = 20
 MAX_HINTS        = 5   # only used in tool mode
-MAX_WEB_SEARCHES = 2   # only used in tool mode
+MAX_WEB_SEARCHES = 5   # only used in tool mode
 
 # ─── Evaluation ─────────────────────────────────────────────────────────────
 RUN_JUDGE    = True

@@ -38,6 +38,7 @@ class BaseGame:
         secret_model,
         secret_tokenizer,
         guesser_system_prompt: str,
+        tracker=None,
     ) -> None:
         """
         Args:
@@ -58,6 +59,7 @@ class BaseGame:
         self.secret_model         = secret_model
         self.secret_tokenizer     = secret_tokenizer
         self.guesser_system_prompt = guesser_system_prompt
+        self.tracker               = tracker
 
         # ── Game state ───────────────────────────────────────────────────
         self.questions:             list[str]   = []
@@ -222,9 +224,13 @@ class BaseGame:
             if skip_increment:
                 continue
 
+            if self.tracker:
+                self.tracker.epoch_start()
             guesser_output = generate_answer(
                 self.guesser_messages, self.guesser_model, self.guesser_tokenizer
             )
+            if self.tracker:
+                self.tracker.epoch_end()
             print(f"Guesser: {guesser_output}")
             transcript_lines.append(f"Guesser: {guesser_output}")
 

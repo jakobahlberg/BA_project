@@ -82,12 +82,14 @@ class ToolGame(BaseGame):
         secret_model,
         secret_tokenizer,
         guesser_system_prompt: str,
+        tracker=None,
     ) -> None:
         super().__init__(
             secret_prompt, secret_label, round_number,
             guesser_model, guesser_tokenizer,
             secret_model, secret_tokenizer,
             guesser_system_prompt,
+            tracker=tracker,
         )
         self.hints             = get_hints_for_secret(secret_label)
         self.hints_used        = 0

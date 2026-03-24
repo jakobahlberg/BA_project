@@ -60,16 +60,19 @@ def main() -> None:
 
     # ── Carbon tracking ──────────────────────────────────────────────────────
     os.makedirs(config.CARBON_LOG_DIR, exist_ok=True)
+    # Each epoch = one guesser generate_answer call.
+    # Upper bound: all secrets * max turns (actual calls will be fewer).
     tracker = CarbonTracker(
-        epochs=1,
+        epochs=len(SECRETS) * config.MAX_TURNS,
         monitor_epochs=True,
         log_dir=config.CARBON_LOG_DIR,
         verbose=2,
     )
-    tracker.epoch_start()
 
     # ── Run rounds ───────────────────────────────────────────────────────────
-    eval_results = []
+    # Only game play (guesser + secret keeper) is tracked for carbon.
+    # Evaluation / judge runs after epoch_end so it is excluded.
+    records = []
     category_stats = {
         "animal": {"rounds": 0, "turns": 0, "correct": 0},
         "food":   {"rounds": 0, "turns": 0, "correct": 0},
@@ -78,7 +81,6 @@ def main() -> None:
 
     for i, secret in enumerate(SECRETS, start=1):
 
-        # Build the right game instance for this mode
         game = GameClass(
             secret_prompt=secret.system_prompt,
             secret_label=secret.label,
@@ -88,18 +90,23 @@ def main() -> None:
             secret_model=secret_model,
             secret_tokenizer=secret_tokenizer,
             guesser_system_prompt=guesser_prompt,
+            tracker=tracker,
         )
 
         record = game.play()
+        records.append((record, secret))
 
-        # Accumulate category stats
         stats = category_stats[secret.category]
         stats["rounds"] += 1
         stats["turns"]  += record.turns_used
         if record.was_correct:
             stats["correct"] += 1
 
-        # Evaluate and print
+    tracker.stop()
+
+    # ── Evaluate (judge excluded from carbon tracking) ────────────────────────
+    eval_results = []
+    for record, secret in records:
         result = evaluate_game(
             record,
             dataset_path=config.DATASET_PATH,
@@ -108,9 +115,6 @@ def main() -> None:
         )
         eval_results.append(result)
         print(result)
-
-    tracker.epoch_end()
-    tracker.stop()
 
     # ── Summary ──────────────────────────────────────────────────────────────
     total_rounds  = len(SECRETS)

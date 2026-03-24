@@ -21,7 +21,7 @@ CSV_COLUMNS = (
     ["run_id", "seed", "mode", "guesser_model", "secret_model", "num_games", "num_wins",
      "judge_win_count"]
     + SCORE_FIELDS
-    + ["avg_diversity", "energy_kwh", "energy_per_game_wh", "co2_g", "co2_per_game_g"]
+    + ["avg_diversity", "energy_kwh", "energy_per_game_wh", "co2_g", "co2_per_game_g", "adjusted_co2_per_game_g"]
 )
 
 CARBON_HEADER = "=== CARBON SUMMARY ==="
@@ -64,6 +64,12 @@ def parse_out(path: str) -> dict | None:
     }
     for f in SCORE_FIELDS:
         row[f] = get(rf"{f}\s*:\s*([\d.]+)", float)
+
+    # adjusted_co2: reliability * co2_per_game — if reliability=1 carbon is unchanged,
+    # if reliability<1 carbon is scaled down proportionally.
+    rel = row.get("avg_llm_judge_secret_accuracy")
+    co2_pg = row.get("co2_per_game_g")
+    row["adjusted_co2_per_game_g"] = round(rel * co2_pg, 6) if (rel is not None and co2_pg is not None and rel > 0) else None
 
     # avg diversity across all games, excluding Q1 (always 1.0)
     all_scores = []
@@ -152,7 +158,7 @@ _AGGREGATE_METRICS = [
     # Tool usage (tool mode only; 0 for standard)
     "avg_hints_used", "avg_web_searches_used", "avg_tool_calls_used",
     # Energy (per-game so comparable across run sizes)
-    "energy_per_game_wh", "co2_per_game_g",
+    "energy_per_game_wh", "co2_per_game_g", "adjusted_co2_per_game_g",
 ]
 
 
