@@ -5,8 +5,6 @@ NUM_RUNS=${1:-10}
 START_SEED=${2:-1}
 BATCH_SIZE=${3:-2}
 POLL_SECONDS=${4:-30}
-RUN_TAG=${5:-$(date +%F)}
-RUN_DIR="runs_${RUN_TAG}"
 
 if ! command -v sbatch >/dev/null 2>&1; then
   echo "sbatch not found. Run this on the cluster login node."
@@ -18,10 +16,7 @@ if ! command -v squeue >/dev/null 2>&1; then
   exit 1
 fi
 
-mkdir -p "${RUN_DIR}"
-
 echo "Submitting ${NUM_RUNS} runs from seed ${START_SEED} in batches of ${BATCH_SIZE}."
-echo "Output directory: ${RUN_DIR}/"
 
 submitted=0
 current_seed=${START_SEED}
@@ -34,8 +29,8 @@ while [ "$submitted" -lt "$NUM_RUNS" ]; do
     job_id=$(sbatch --parsable \
       --export=ALL,EXPERIMENT_SEED=${seed} \
       --job-name="llm_seed_${seed}" \
-      --output="${RUN_DIR}/slurm-seed${seed}-%j.out" \
-      run_llm_gpu.sh)
+      --output="slurm-seed${seed}-%j.out" \
+      run.sh)
 
     echo "Submitted seed=${seed} job_id=${job_id}"
     batch_job_ids+=("${job_id}")
@@ -64,4 +59,3 @@ while [ "$submitted" -lt "$NUM_RUNS" ]; do
 done
 
 echo "All ${NUM_RUNS} seeded runs submitted and completed (or left queue)."
-echo "Aggregate with: python3 aggregate_seed_results.py \"${RUN_DIR}/slurm-seed*.out\""
