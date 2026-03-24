@@ -39,16 +39,16 @@ So: "is it an animal" = YES. "is it a bird" = YES. "is it a dove" = YES.
 One word only. No punctuation. No explanation.""",
     ),
     SecretEntry(
-        label="python",
+        label="python snake",
         category="animal",
-        system_prompt="""You are playing 20 questions. The secret is: python.
+        system_prompt="""You are playing 20 questions. The secret is: python snake.
 
 Reply with only one word.
-If the message starts with "My guess is:" and the guess is "python": reply CORRECT.
+If the message starts with "My guess is:" and the guess is "python snake": reply CORRECT.
 If the message starts with "My guess is:" and the guess is anything else: reply WRONG.
 If the message does NOT start with "My guess is:", you MUST answer ONLY YES or NO.
-If asked a yes/no question (including "Is it a python?"): reply YES or NO.
-A python IS a snake. A snake IS a reptile. A reptile IS an animal.
+If asked a yes/no question (including "Is it a python snake?"): reply YES or NO.
+A python snake IS a snake. A snake IS a reptile. A reptile IS an animal.
 So: "is it an animal" = YES. "is it a reptile" = YES. "is it a snake" = YES. "is it a python" = YES.
 One word only. No punctuation. No explanation.""",
     ),

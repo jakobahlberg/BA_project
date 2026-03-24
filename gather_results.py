@@ -1,6 +1,8 @@
 import csv
 import os
 import re
+import statistics
+from collections import defaultdict
 
 ROOT      = os.path.dirname(os.path.abspath(__file__))
 RESULTS_DIR = os.path.join(ROOT, "results")
@@ -12,6 +14,7 @@ SCORE_FIELDS = [
     "avg_llm_judge_strategy", "avg_llm_judge_question_quality",
     "avg_llm_judge_logical_consistency", "avg_llm_judge_secret_accuracy",
     "avg_llm_judge_guesser_format", "avg_layer3_score", "judge_layer1_agreement",
+    "avg_hints_used", "avg_web_searches_used", "avg_tool_calls_used",
 ]
 
 CSV_COLUMNS = (
@@ -94,7 +97,12 @@ def append_carbon_summary(path: str, row: dict) -> None:
 def main() -> None:
     os.makedirs(RESULTS_DIR, exist_ok=True)
 
+    # Scan root, outputs/, and any runs_*/ subdirectories
     scan_dirs = [ROOT, os.path.join(ROOT, "outputs")]
+    scan_dirs += sorted(
+        os.path.join(ROOT, d) for d in os.listdir(ROOT)
+        if re.match(r"runs_", d) and os.path.isdir(os.path.join(ROOT, d))
+    )
     out_files = sorted(
         os.path.join(d, f)
         for d in scan_dirs if os.path.isdir(d)
@@ -123,6 +131,67 @@ def main() -> None:
         writer.writerows(rows)
 
     print(f"\nSaved {len(rows)} run(s) → {CSV_PATH}")
+
+    _print_aggregate_summary(rows)
+
+
+_AGGREGATE_METRICS = [
+    # Win / outcome
+    "avg_win_score", "avg_verified_win_score",
+    # Layer 1
+    "avg_efficiency_score", "avg_secret_reliability_score",
+    # Layer 2
+    "avg_semantic_relevance_score", "avg_canonical_coverage_score",
+    "avg_information_gain_score",
+    # Layer 3
+    "avg_llm_judge_strategy", "avg_llm_judge_question_quality",
+    "avg_llm_judge_logical_consistency", "avg_llm_judge_secret_accuracy",
+    "avg_llm_judge_guesser_format", "avg_layer3_score",
+    # Agreement
+    "judge_layer1_agreement",
+    # Tool usage (tool mode only; 0 for standard)
+    "avg_hints_used", "avg_web_searches_used", "avg_tool_calls_used",
+    # Energy (per-game so comparable across run sizes)
+    "energy_per_game_wh", "co2_per_game_g",
+]
+
+
+def _mean_std(vals: list) -> tuple:
+    vals = [v for v in vals if v is not None]
+    if not vals:
+        return float("nan"), float("nan")
+    if len(vals) == 1:
+        return vals[0], 0.0
+    return statistics.mean(vals), statistics.pstdev(vals)
+
+
+def _print_aggregate_summary(rows: list) -> None:
+    if not rows:
+        return
+
+    # Derive avg_verified_win_score (judge wins / total games) for each row
+    for r in rows:
+        n = r.get("num_games")
+        j = r.get("judge_win_count")
+        r["avg_verified_win_score"] = (j / n) if (n and j is not None) else None
+
+    # Group by (mode, guesser_model, secret_model) — each group = one config run N times
+    groups: dict = defaultdict(list)
+    for r in rows:
+        key = (r.get("mode", "?"), r.get("guesser_model", "?"), r.get("secret_model", "?"))
+        groups[key].append(r)
+
+    print("\n=== AGGREGATE SUMMARY (mean ± std across seeds) ===")
+    for (mode, guesser, secret), group_rows in sorted(groups.items()):
+        guesser_label = guesser.split("/")[-1]
+        secret_label  = secret.split("/")[-1]
+        n_seeds = len(group_rows)
+        print(f"\n  Config: {mode} | guesser={guesser_label} | secret={secret_label}  ({n_seeds} seed(s))")
+        for metric in _AGGREGATE_METRICS:
+            vals = [r.get(metric) for r in group_rows]
+            m, s = _mean_std(vals)
+            if m == m:  # skip NaN
+                print(f"    {metric}: {m:.3f} ± {s:.3f}")
 
 
 if __name__ == "__main__":

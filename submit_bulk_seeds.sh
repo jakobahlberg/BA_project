@@ -35,7 +35,7 @@ while [ "$submitted" -lt "$NUM_RUNS" ]; do
       --export=ALL,EXPERIMENT_SEED=${seed} \
       --job-name="llm_seed_${seed}" \
       --output="${RUN_DIR}/slurm-seed${seed}-%j.out" \
-      run_llm_gpu.sh)
+      run_job.sh)
 
     echo "Submitted seed=${seed} job_id=${job_id}"
     batch_job_ids+=("${job_id}")
@@ -64,4 +64,4 @@ while [ "$submitted" -lt "$NUM_RUNS" ]; do
 done
 
 echo "All ${NUM_RUNS} seeded runs submitted and completed (or left queue)."
-echo "Aggregate with: python3 aggregate_seed_results.py \"${RUN_DIR}/slurm-seed*.out\""
+echo "Collect results with: python3 gather_results.py"

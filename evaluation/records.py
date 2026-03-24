@@ -24,7 +24,8 @@ class GameRecord:
     secret_raw_responses: List[str]  # Raw model output for every secret turn
     turn_log: List[Tuple[str, str, str]]  # (action, content, raw_response) per turn
     max_turns: int = 20
-    hints_used: int = 0            # Number of hints consumed (hint mode only)
+    hints_used: int = 0            # Number of hints consumed (tool mode only)
+    web_searches_used: int = 0     # Number of web searches used (tool mode only)
     raw_transcript: str = ""       # Raw printed game log from start to end
 
 
@@ -52,6 +53,11 @@ class EvaluationResult:
     llm_judge_guesser_format: float
     layer3_score: float
     judge_won: bool                # Judge's verdict from raw transcript
+
+    # Tool usage (tool mode only; 0 for standard mode)
+    hints_used: int = 0
+    web_searches_used: int = 0
+    tool_calls_used: int = 0       # hints_used + web_searches_used
 
     details: Dict = field(default_factory=dict)
 

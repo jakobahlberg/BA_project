@@ -59,6 +59,9 @@ def evaluate_game(
         llm_judge_guesser_format=gf,
         layer3_score=l3,
         judge_won=judge_won,
+        hints_used=record.hints_used,
+        web_searches_used=record.web_searches_used,
+        tool_calls_used=record.hints_used + record.web_searches_used,
         details={
             "secret": record.secret,
             "turns_used": record.turns_used,
@@ -93,6 +96,7 @@ def summarise_results(results: List[EvaluationResult]) -> Dict:
         "layer2_score", "llm_judge_strategy", "llm_judge_question_quality",
         "llm_judge_logical_consistency", "llm_judge_secret_accuracy",
         "llm_judge_guesser_format", "layer3_score",
+        "hints_used", "web_searches_used", "tool_calls_used",
     ]
     summary: Dict = {}
     for f in fields:

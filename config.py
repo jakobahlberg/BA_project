@@ -14,17 +14,18 @@ HF_TOKEN = os.environ.get("HF_TOKEN", "")
 os.environ["HUGGINGFACE_HUB_TOKEN"] = HF_TOKEN
 
 # ─── Game mode ──────────────────────────────────────────────────────────────
-# Options: "standard" | "easy" | "hint"
-MODE = "standard"
+# Options: "standard" | "tool"
+MODE = "tool"
 
 # ─── Models ─────────────────────────────────────────────────────────────────
-GUESSER_MODEL = "Qwen/Qwen3.5-4B"
-SECRET_MODEL  = "Qwen/Qwen3.5-4B"
+GUESSER_MODEL = "Qwen/Qwen3-8B"
+SECRET_MODEL  = "Qwen/Qwen3-8B"
 JUDGE_MODEL   = "Qwen/Qwen3-8B"
 
 # ─── Game settings ──────────────────────────────────────────────────────────
 MAX_TURNS = 20
-MAX_HINTS = 5   # only used in hint mode
+MAX_HINTS        = 5   # only used in tool mode
+MAX_WEB_SEARCHES = 2   # only used in tool mode
 
 # ─── Evaluation ─────────────────────────────────────────────────────────────
 RUN_JUDGE    = True

@@ -7,9 +7,8 @@ Configure the run in config.py, then execute:
     python3 run.py
 
 The MODE flag in config.py selects which secrets and game class to use:
-    "standard" — 9 harder secrets  (golden retriever, dove, python, ...)
-    "easy"     — 9 simpler secrets (dog, cat, elephant, ...)
-    "hint"     — 9 secrets with USE_HINT mechanic
+    "standard" — no tools (golden retriever, python snake, ...)
+    "tool"     — same secrets with USE_HINT and WEB_SEARCH tools enabled
 """
 
 from __future__ import annotations
@@ -46,18 +45,13 @@ def main() -> None:
         from game.base import BaseGame as GameClass
         from prompts import GUESSER_SYSTEM_PROMPT as guesser_prompt
 
-    elif config.MODE == "easy":
-        from word_bank.easy import SECRETS
-        from game.base import BaseGame as GameClass
-        from prompts import GUESSER_SYSTEM_PROMPT as guesser_prompt
-
-    elif config.MODE == "hint":
-        from word_bank.hint import SECRETS
-        from game.hint import HintGame as GameClass
-        from prompts import HINT_GUESSER_SYSTEM_PROMPT as guesser_prompt
+    elif config.MODE == "tool":
+        from word_bank.tool import SECRETS
+        from game.tool import ToolGame as GameClass
+        from prompts import TOOL_GUESSER_SYSTEM_PROMPT as guesser_prompt
 
     else:
-        raise ValueError(f"Unknown MODE '{config.MODE}'. Choose: standard | easy | hint")
+        raise ValueError(f"Unknown MODE '{config.MODE}'. Choose: standard | tool")
 
     # ── Load models ──────────────────────────────────────────────────────────
     guesser_model, guesser_tokenizer = load_model(config.GUESSER_MODEL)
@@ -85,28 +79,16 @@ def main() -> None:
     for i, secret in enumerate(SECRETS, start=1):
 
         # Build the right game instance for this mode
-        if config.MODE == "hint":
-            game = GameClass(
-                secret_prompt=secret.system_prompt,
-                secret_label=secret.label,
-                round_number=i,
-                guesser_model=guesser_model,
-                guesser_tokenizer=guesser_tokenizer,
-                secret_model=secret_model,
-                secret_tokenizer=secret_tokenizer,
-                guesser_system_prompt=guesser_prompt,
-            )
-        else:
-            game = GameClass(
-                secret_prompt=secret.system_prompt,
-                secret_label=secret.label,
-                round_number=i,
-                guesser_model=guesser_model,
-                guesser_tokenizer=guesser_tokenizer,
-                secret_model=secret_model,
-                secret_tokenizer=secret_tokenizer,
-                guesser_system_prompt=guesser_prompt,
-            )
+        game = GameClass(
+            secret_prompt=secret.system_prompt,
+            secret_label=secret.label,
+            round_number=i,
+            guesser_model=guesser_model,
+            guesser_tokenizer=guesser_tokenizer,
+            secret_model=secret_model,
+            secret_tokenizer=secret_tokenizer,
+            guesser_system_prompt=guesser_prompt,
+        )
 
         record = game.play()
 

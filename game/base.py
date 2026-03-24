@@ -83,20 +83,36 @@ class BaseGame:
 
     def _parse_action(self, text: str) -> tuple[str, str | None]:
         """
-        Parse a single line of guesser output into (action, content).
+        Parse guesser output into (action, content).
+
+        Checks the first non-empty line first. If no valid prefix is found there,
+        scans subsequent lines — this handles models that emit reasoning or preamble
+        before the actual QUESTION:/GUESS: action.
 
         Returns:
             action:  "question" | "guess" | "unknown"
-            content: The text after the prefix, or the raw text for "unknown".
+            content: The text after the prefix, or the raw first line for "unknown".
 
         Subclasses should call super()._parse_action() first and extend with
         additional action keywords (e.g. "hint").
         """
-        if text.startswith("QUESTION:"):
-            return "question", text.replace("QUESTION:", "").strip()
-        if text.startswith("GUESS:"):
-            return "guess", text.replace("GUESS:", "").strip()
-        return "unknown", text
+        lines = [ln.strip() for ln in text.splitlines() if ln.strip()]
+        if not lines:
+            return "unknown", text
+
+        for line in lines:
+            upper = line.upper()
+            if upper.startswith("QUESTION:"):
+                return "question", line.split(":", 1)[-1].strip()
+            if upper.startswith("GUESS:"):
+                return "guess", line.split(":", 1)[-1].strip()
+
+        # Last-resort: if any line ends with "?", treat it as a question
+        for line in lines:
+            if line.endswith("?"):
+                return "question", line
+
+        return "unknown", lines[0]
 
     # ── Turn handlers ────────────────────────────────────────────────────────
 

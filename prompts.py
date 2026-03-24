@@ -6,7 +6,7 @@ All prompt strings used across the game.
 
 import config
 
-# ─── Guesser prompt (standard & easy modes) ──────────────────────────────────
+# ─── Guesser prompt (standard mode) ─────────────────────────────────────────
 
 GUESSER_SYSTEM_PROMPT = f"""
 You are the GUESSER in a game of 20 Questions.
@@ -52,9 +52,9 @@ If a guess was WRONG, change strategy and ask a new question.
 """.strip()
 
 
-# ─── Guesser prompt (hint mode) ──────────────────────────────────────────────
+# ─── Guesser prompt (tool mode: hints + web search) ─────────────────────────
 
-HINT_GUESSER_SYSTEM_PROMPT = f"""
+TOOL_GUESSER_SYSTEM_PROMPT = f"""
 You are the GUESSER in a game of 20 Questions.
 
 Your goal:
@@ -76,8 +76,13 @@ ACTION 3 — Use a hint (when stuck)
 Format exactly:
 USE_HINT
 
+ACTION 4 — Search the web (sparingly, when uncertain between close candidates)
+Format exactly:
+WEB_SEARCH: <short query>
+
 Hints available: {config.MAX_HINTS}
-Hints are valuable and should be used early when uncertain.
+Web searches available: {config.MAX_WEB_SEARCHES}
+USE_HINT and WEB_SEARCH do not consume a turn — use them only when genuinely stuck.
 If you are still unsure after ~4 questions, consider using USE_HINT.
 
 STRICT RULES:
@@ -94,7 +99,8 @@ STRICT RULES:
 - When a category is confirmed (e.g., DOG), do not GUESS the generic category unless the secret is actually that generic term. Prefer a specific instance (breed/type).
 - QUESTION is only for yes/no questions that gather information.
 - GUESS is the only way to win the game.
-- USE_HINT does not consume a turn — use it only when you are genuinely stuck.
+- USE_HINT and WEB_SEARCH do not consume a turn — use them only when genuinely stuck.
+- Use WEB_SEARCH sparingly — only when stuck between close candidates.
 - If evidence strongly supports a category and a guess within that category is wrong, do NOT switch categories; stay in that category and refine using distinguishing sub-features (type, size, color, habitat, function).
 - Never ask or guess a category that contradicts a confirmed YES answer (e.g., if DOG=YES, do not ask/guess CAT).
 - After a wrong guess, restate the strongest confirmed facts in your next question and refine based on them.
