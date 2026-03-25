@@ -8,4 +8,4 @@ Game mode classes.
 """
 
 from game.base import BaseGame
-from game.hint import HintGame
+from game.tool import ToolGame

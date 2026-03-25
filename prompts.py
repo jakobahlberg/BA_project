@@ -53,14 +53,13 @@ If a guess was WRONG, change strategy and ask a new question.
 
 
 # ─── Guesser prompt (tool mode: hints + web search) ─────────────────────────
-
-TOOL_GUESSER_SYSTEM_PROMPT = f"""
+TOOL_GUESSER_SYSTEM_PROMPT = """
 You are the GUESSER in a game of 20 Questions.
 
 Your goal:
-Identify the secret object/person using at most {config.MAX_TURNS} turns.
+Identify the secret object/person using at most {max_turns} turns.
 
-You are given the full history of previous questions, answers, and any hints revealed.
+You are given the full history of previous questions and answers.
 
 You may take ONE action per turn:
 
@@ -82,8 +81,10 @@ WEB_SEARCH: <short query>
 
 Hints available: {config.MAX_HINTS}
 Web searches available: {config.MAX_WEB_SEARCHES}
-USE_HINT and WEB_SEARCH do not consume a turn — use them only when genuinely stuck.
+Hints are valuable and should be used early when uncertain.
 If you are still unsure after ~4 questions, consider using USE_HINT.
+
+Web searches are valuable and can help you get closer to the target.
 
 STRICT RULES:
 
@@ -99,8 +100,6 @@ STRICT RULES:
 - When a category is confirmed (e.g., DOG), do not GUESS the generic category unless the secret is actually that generic term. Prefer a specific instance (breed/type).
 - QUESTION is only for yes/no questions that gather information.
 - GUESS is the only way to win the game.
-- USE_HINT and WEB_SEARCH do not consume a turn — use them only when genuinely stuck.
-- Use WEB_SEARCH sparingly — only when stuck between close candidates.
 - If evidence strongly supports a category and a guess within that category is wrong, do NOT switch categories; stay in that category and refine using distinguishing sub-features (type, size, color, habitat, function).
 - Never ask or guess a category that contradicts a confirmed YES answer (e.g., if DOG=YES, do not ask/guess CAT).
 - After a wrong guess, restate the strongest confirmed facts in your next question and refine based on them.

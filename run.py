@@ -46,7 +46,7 @@ def main() -> None:
         from prompts import GUESSER_SYSTEM_PROMPT as guesser_prompt
 
     elif config.MODE == "tool":
-        from word_bank.tool import SECRETS
+        from word_bank.standard import SECRETS
         from game.tool import ToolGame as GameClass
         from prompts import TOOL_GUESSER_SYSTEM_PROMPT as guesser_prompt
 

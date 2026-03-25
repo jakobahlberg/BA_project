@@ -81,62 +81,6 @@ HINTS_BY_SECRET: Dict[str, List[str]] = {
         "It can open and close.",
         "It allows people to enter or exit rooms.",
     ],
-    "dog": [
-        "It is a living creature.",
-        "It is an animal.",
-        "It is a mammal.",
-        "It is commonly kept as a pet.",
-        "It is known for its loyalty and barking.",
-    ],
-    "cat": [
-        "It is a living creature.",
-        "It is an animal.",
-        "It is a mammal.",
-        "It is commonly kept as a pet.",
-        "It is known for purring and meowing.",
-    ],
-    "elephant": [
-        "It is a living creature.",
-        "It is an animal.",
-        "It is a mammal.",
-        "It is much larger than a car.",
-        "It has a long nose called a trunk.",
-    ],
-    "apple": [
-        "It is not alive.",
-        "You can eat it.",
-        "It grows on a tree.",
-        "It is a fruit.",
-        "It is typically red or green.",
-    ],
-    "banana": [
-        "It is not alive.",
-        "You can eat it.",
-        "It is a fruit.",
-        "It is yellow when ripe.",
-        "It has a long curved shape.",
-    ],
-    "chair": [
-        "It is not alive.",
-        "It is man-made.",
-        "It is found indoors.",
-        "It is a piece of furniture.",
-        "It is used for sitting.",
-    ],
-    "ball": [
-        "It is not alive.",
-        "It is man-made.",
-        "It is used for play or sport.",
-        "It is spherical in shape.",
-        "You can throw, kick, or bounce it.",
-    ],
-    "mug": [
-        "It is not alive.",
-        "It is man-made.",
-        "It is found indoors.",
-        "It is used for drinking.",
-        "It has a handle on the side.",
-    ],
 }
 
 
