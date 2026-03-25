@@ -30,8 +30,10 @@ QUESTION_QUALITY: Were questions clear, unambiguous, and non-redundant?
 LOGICAL_CONSISTENCY: Did the guesser stay consistent with all prior answers?
   10 = never contradicted a prior answer | 1 = frequently contradicted known facts
 
-SECRET_ACCURACY: Did the secret keeper give factually correct YES/NO responses?
-  10 = every answer was factually correct | 1 = multiple wrong or contradictory answers
+SECRET_ACCURACY: Did the secret keeper give factually correct YES/NO responses, given the secret is "{secret}"?
+  Consider: would a knowledgeable human answer each question the same way for this specific secret?
+  Look for cases where the secret said NO but should have said YES (or vice versa) — e.g. saying NO to "Is it an animal?" when the secret is a dog, or YES to "Is it edible?" when the secret is a car.
+  10 = every YES/NO answer is factually correct for the secret | 1 = multiple answers are clearly wrong for the secret
 
 GUESSER_FORMAT: Did the guesser strictly follow the expected format (QUESTION: / GUESS: prefixes, one action per turn, no extra commentary)?
   10 = perfect format every turn | 1 = frequent format violations or extra text

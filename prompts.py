@@ -53,11 +53,11 @@ If a guess was WRONG, change strategy and ask a new question.
 
 
 # ─── Guesser prompt (tool mode: hints + web search) ─────────────────────────
-TOOL_GUESSER_SYSTEM_PROMPT = """
+TOOL_GUESSER_SYSTEM_PROMPT = f"""
 You are the GUESSER in a game of 20 Questions.
 
 Your goal:
-Identify the secret object/person using at most {max_turns} turns.
+Identify the secret object/person using at most {config.MAX_TURNS} turns.
 
 You are given the full history of previous questions and answers.
 
