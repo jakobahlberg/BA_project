@@ -1,8 +1,11 @@
+import argparse
 import csv
+import glob
 import os
 import re
 import statistics
 from collections import defaultdict
+from typing import List, Optional
 
 ROOT      = os.path.dirname(os.path.abspath(__file__))
 RESULTS_DIR = os.path.join(ROOT, "results")
@@ -27,7 +30,7 @@ CSV_COLUMNS = (
 CARBON_HEADER = "=== CARBON SUMMARY ==="
 
 
-def parse_out(path: str) -> dict | None:
+def parse_out(path: str) -> Optional[dict]:
     with open(path) as f:
         text = f.read()
 
@@ -100,21 +103,51 @@ def append_carbon_summary(path: str, row: dict) -> None:
         f.write("\n".join(lines) + "\n")
 
 
-def main() -> None:
-    os.makedirs(RESULTS_DIR, exist_ok=True)
+def _collect_out_files(patterns: Optional[List[str]]) -> List[str]:
+    if patterns:
+        out_files: List[str] = []
+        for p in patterns:
+            if os.path.isdir(p):
+                out_files.extend(
+                    os.path.join(p, f)
+                    for f in os.listdir(p)
+                    if re.match(r"slurm-.+\.out", f)
+                )
+            else:
+                out_files.extend(glob.glob(p))
+        return sorted({p for p in out_files if os.path.isfile(p)})
 
-    # Scan root, outputs/, and any runs_*/ subdirectories
+    # Default: scan root, outputs/, and any runs_*/ subdirectories
     scan_dirs = [ROOT, os.path.join(ROOT, "outputs")]
     scan_dirs += sorted(
         os.path.join(ROOT, d) for d in os.listdir(ROOT)
         if re.match(r"runs_", d) and os.path.isdir(os.path.join(ROOT, d))
     )
-    out_files = sorted(
+    return sorted(
         os.path.join(d, f)
         for d in scan_dirs if os.path.isdir(d)
         for f in os.listdir(d)
         if re.match(r"slurm-.+\.out", f)
     )
+
+
+def _filter_by_batch_id(paths: List[str], batch_id: str) -> List[str]:
+    token = f"slurm-batch{batch_id}-seed"
+    return [p for p in paths if token in os.path.basename(p)]
+
+
+def main() -> None:
+    ap = argparse.ArgumentParser(description="Aggregate slurm outputs into results.csv")
+    ap.add_argument("patterns", nargs="*", help="Optional glob(s) or run directory to limit aggregation")
+    ap.add_argument("--batch-id", dest="batch_id", help="Only include files tagged with this batch id")
+    args = ap.parse_args()
+
+    os.makedirs(RESULTS_DIR, exist_ok=True)
+
+    out_files = _collect_out_files(args.patterns)
+    if args.batch_id:
+        out_files = _filter_by_batch_id(out_files, args.batch_id)
+        print(f"Filtering by batch id: {args.batch_id}")
 
     rows = []
     for path in out_files:

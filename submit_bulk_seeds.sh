@@ -7,6 +7,7 @@ BATCH_SIZE=${3:-2}
 POLL_SECONDS=${4:-30}
 RUN_TAG=${5:-$(date +%F)}
 RUN_DIR="runs_${RUN_TAG}"
+BATCH_ID=${SLURM_JOB_ID:-manual-$(date +%s)}
 
 if ! command -v sbatch >/dev/null 2>&1; then
   echo "sbatch not found. Run this on the cluster login node."
@@ -22,6 +23,7 @@ mkdir -p "${RUN_DIR}"
 
 echo "Submitting ${NUM_RUNS} runs from seed ${START_SEED} in batches of ${BATCH_SIZE}."
 echo "Output directory: ${RUN_DIR}/"
+echo "Batch ID tag: ${BATCH_ID}"
 
 submitted=0
 current_seed=${START_SEED}
@@ -32,9 +34,9 @@ while [ "$submitted" -lt "$NUM_RUNS" ]; do
   for ((i=0; i<BATCH_SIZE && submitted<NUM_RUNS; i++)); do
     seed=${current_seed}
     job_id=$(sbatch --parsable \
-      --export=ALL,EXPERIMENT_SEED=${seed} \
+      --export=ALL,EXPERIMENT_SEED=${seed},BATCH_ID=${BATCH_ID} \
       --job-name="llm_seed_${seed}" \
-      --output="${RUN_DIR}/slurm-seed${seed}-%j.out" \
+      --output="${RUN_DIR}/slurm-batch${BATCH_ID}-seed${seed}-%j.out" \
       run_job.sh)
 
     echo "Submitted seed=${seed} job_id=${job_id}"
@@ -64,4 +66,4 @@ while [ "$submitted" -lt "$NUM_RUNS" ]; do
 done
 
 echo "All ${NUM_RUNS} seeded runs submitted and completed (or left queue)."
-echo "Collect results with: python3 gather_results.py"
+echo "Collect results with: python3 gather_results.py \"${RUN_DIR}/slurm-batch${BATCH_ID}-seed*.out\""

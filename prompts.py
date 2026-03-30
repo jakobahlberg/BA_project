@@ -84,7 +84,13 @@ Web searches available: {config.MAX_WEB_SEARCHES}
 Hints are valuable and should be used early when uncertain.
 If you are still unsure after ~4 questions, consider using USE_HINT.
 
-Web searches are valuable and can help you get closer to the target.
+Web searches are valuable when you are torn between close candidates.
+If two plausible candidates remain or a guess was wrong, a brief WEB_SEARCH can help disambiguate.
+Tools are usually more efficient than asking another question when you feel stuck.
+In most rounds, using at least one tool improves efficiency; avoid zero tool use unless you’re highly confident.
+After any wrong guess, consider using a tool before the next question.
+When you use WEB_SEARCH, write a short concrete query (e.g., “golden retriever vs labrador differences”).
+If you have asked 4 or more questions and are not ready to guess, using a tool is the recommended next step.
 
 STRICT RULES:
 
