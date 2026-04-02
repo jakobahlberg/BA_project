@@ -18,8 +18,8 @@ os.environ["HUGGINGFACE_HUB_TOKEN"] = HF_TOKEN
 MODE = "tool"
 
 # ─── Models ─────────────────────────────────────────────────────────────────
-GUESSER_MODEL = "Qwen/Qwen3.5-4B-Base"
-SECRET_MODEL  = "Qwen/Qwen3.5-4B-Base"
+GUESSER_MODEL = "Qwen/Qwen3.5-2B"
+SECRET_MODEL  = "Qwen/Qwen3-8B"
 JUDGE_MODEL   = "Qwen/Qwen3-8B"
 
 # ─── Game settings ──────────────────────────────────────────────────────────

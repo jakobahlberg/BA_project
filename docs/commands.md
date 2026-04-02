@@ -13,4 +13,6 @@ sbatch --export=ALL,EXPERIMENT_SEED=1 \
 bash submit_bulk_seeds.sh 10 1 2 30 tool_web5_$(date +%F)
 
 # Parse all run outputs into results CSV + aggregate summary
-python3 gather_results.py
+python3 gather_results.py outputs/runs_*/
+
+

@@ -29,7 +29,7 @@ print("CUDA devices:", torch.cuda.device_count())
 PY
 
 # Install dependencies once on login node instead of every job to avoid CUDA re-init issues
-# python3 -m pip install --user transformers accelerate torch sentencepiece carbontracker sentence-transformers fpdf2 pymupdf
+# python3 -m pip install --user transformers accelerate torch sentencepiece carbontracker sentence-transformers fpdf2 pymupdf ddgs
 
 # HuggingFace cache (override via environment if needed)
 export HF_HOME="${HF_HOME:-$HOME/.cache/huggingface}"

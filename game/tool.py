@@ -9,8 +9,6 @@ web searches at config.MAX_WEB_SEARCHES.
 
 from __future__ import annotations
 
-import requests
-
 import config
 from evaluation.records import GameRecord
 from game.base import BaseGame
@@ -26,39 +24,18 @@ except ImportError:
     print("[ToolGame] Warning: fpdf/fitz not installed. Hints will be served from memory.")
 
 
-def _run_web_search(query: str) -> str:
-    """DuckDuckGo instant-answer lookup. Returns a short snippet string."""
+def _run_web_search(query: str, max_results: int = 3) -> str:
+    """DuckDuckGo full-text search via DDGS. Returns a short snippet string."""
     q = query.strip()
     if not q:
         return "No query provided."
     try:
-        resp = requests.get(
-            "https://api.duckduckgo.com/",
-            params={"q": q, "format": "json", "no_html": 1, "no_redirect": 1, "skip_disambig": 1},
-            timeout=8,
-        )
-        resp.raise_for_status()
-        data = resp.json()
-
-        snippets = []
-        abstract = (data.get("AbstractText") or "").strip()
-        heading  = (data.get("Heading") or "").strip()
-        if abstract:
-            snippets.append(f"{heading}: {abstract}" if heading else abstract)
-
-        for item in data.get("RelatedTopics", []):
-            if isinstance(item, dict):
-                txt = (item.get("Text") or "").strip()
-                if txt:
-                    snippets.append(txt)
-                for sub in (item.get("Topics") or []):
-                    stxt = (sub.get("Text") or "").strip()
-                    if stxt:
-                        snippets.append(stxt)
-            if len(snippets) >= 3:
-                break
-
-        return " | ".join(snippets[:3]) if snippets else "No concise web result found."
+        from ddgs import DDGS
+        results = DDGS().text(q, max_results=max_results)
+        if not results:
+            return "No web results found."
+        snippets = [f"{r['title']}: {r['body']}" for r in results]
+        return " | ".join(snippets)
     except Exception as e:
         return f"Web search unavailable: {e}"
 
