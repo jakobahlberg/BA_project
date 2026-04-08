@@ -3,7 +3,6 @@ from __future__ import annotations
 import re
 from typing import Dict, Optional, Tuple
 
-import numpy as np
 import torch
 from transformers import AutoModelForCausalLM, AutoTokenizer
 
@@ -12,45 +11,18 @@ from evaluation.records import GameRecord
 _JUDGE_MODEL: Optional[AutoModelForCausalLM] = None
 _JUDGE_TOKENIZER: Optional[AutoTokenizer] = None
 
-_JUDGE_PROMPT_TEMPLATE = """You are an expert evaluator for 20 Questions games.
+_JUDGE_PROMPT_TEMPLATE = """You are verifying whether a 20 Questions game was won correctly.
 
 SECRET: {secret}
 
-TRANSCRIPT:
-{transcript}
+GUESSES MADE (in order):
+{guesses}
 
-Score the game on 6 dimensions. For each, write ONE sentence of reasoning then an integer score 1-10.
+Look through each guess. A guess counts as correct if it refers to the same thing as the secret — ignore minor wording differences (e.g. "a dog" matches "dog", "Eiffel Tower" matches "the Eiffel Tower"). The secret keeper may have incorrectly accepted or rejected guesses, so base your verdict solely on whether any guess actually names or clearly refers to the secret.
 
-STRATEGY: Did the guesser use binary search to efficiently narrow down candidates?
-  10 = optimal bisection each turn | 1 = random or repetitive questions with no narrowing
-
-QUESTION_QUALITY: Were questions clear, unambiguous, and non-redundant?
-  10 = all crisp yes/no questions each covering new ground | 1 = vague or compound questions
-
-LOGICAL_CONSISTENCY: Did the guesser stay consistent with all prior answers?
-  10 = never contradicted a prior answer | 1 = frequently contradicted known facts
-
-SECRET_ACCURACY: Did the secret keeper give factually correct YES/NO responses, given the secret is "{secret}"?
-  Consider: would a knowledgeable human answer each question the same way for this specific secret?
-  Look for cases where the secret said NO but should have said YES (or vice versa) — e.g. saying NO to "Is it an animal?" when the secret is a dog, or YES to "Is it edible?" when the secret is a car.
-  10 = every YES/NO answer is factually correct for the secret | 1 = multiple answers are clearly wrong for the secret
-
-GUESSER_FORMAT: Did the guesser strictly follow the expected format (QUESTION: / GUESS: prefixes, one action per turn, no extra commentary)?
-  10 = perfect format every turn | 1 = frequent format violations or extra text
-
-Also determine whether the guesser won based solely on the transcript.
+Did any guess actually match the secret?
 
 Reply in EXACTLY this format, nothing else:
-STRATEGY_REASON: <one sentence>
-STRATEGY: <1-10>
-QUESTION_QUALITY_REASON: <one sentence>
-QUESTION_QUALITY: <1-10>
-LOGICAL_CONSISTENCY_REASON: <one sentence>
-LOGICAL_CONSISTENCY: <1-10>
-SECRET_ACCURACY_REASON: <one sentence>
-SECRET_ACCURACY: <1-10>
-GUESSER_FORMAT_REASON: <one sentence>
-GUESSER_FORMAT: <1-10>
 JUDGE_WON: <YES or NO>"""
 
 
@@ -79,37 +51,38 @@ def load_judge_model(model_name: str) -> None:
 def layer3_llm_judge(
     record: GameRecord,
     judge_model_name: str = "Qwen/Qwen3-8B",
-    max_new_tokens: int = 384,
+    max_new_tokens: int = 16,
 ) -> Tuple[float, float, float, float, float, float, float, bool, Dict[str, str]]:
     """
-    Score a game on 5 quality dimensions using a single LLM call, and determine
-    whether the guesser won according to the transcript.
+    Determine whether the guesser actually won by checking each guess against
+    the real secret using an LLM, bypassing the unreliable secret_keeper signal.
 
-    Scores are parsed from the model output and normalised to [0, 1].
-    If a score cannot be parsed, it defaults to 0.5 with a warning.
+    Returns a tuple compatible with the existing interface; all dimension scores
+    are 0.0 since only the win verdict is evaluated here.
 
     Args:
         record:           Completed GameRecord to evaluate.
         judge_model_name: HuggingFace model to use if not already loaded.
-        max_new_tokens:   Token budget for the judge response.
+        max_new_tokens:   Token budget for the judge response (small — YES/NO only).
 
     Returns:
         (strategy, question_quality, logical_consistency, secret_accuracy,
          guesser_format, layer3_score, judge_won, feedbacks_dict)
-        All scores in [0, 1]. layer3_score is the mean of the five.
-        judge_won is the judge's determination of game outcome from the transcript.
-        feedbacks_dict maps dimension name → one-sentence reason string.
+        All dimension scores are 0.0. judge_won is the verified win verdict.
     """
     global _JUDGE_MODEL, _JUDGE_TOKENIZER
 
     if _JUDGE_MODEL is None:
         load_judge_model(judge_model_name)
 
-    transcript = record.raw_transcript
+    if not record.guesses:
+        return 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, False, {}
+
+    guesses_str = "\n".join(f"  {i+1}. {g}" for i, g in enumerate(record.guesses))
 
     prompt = _JUDGE_PROMPT_TEMPLATE.format(
         secret=record.secret,
-        transcript=transcript,
+        guesses=guesses_str,
     )
 
     messages = [
@@ -133,40 +106,11 @@ def layer3_llm_judge(
     generated = output_ids[0][inputs.input_ids.shape[-1]:]
     raw = _JUDGE_TOKENIZER.decode(generated, skip_special_tokens=True).strip()
 
-    dims = ("STRATEGY", "QUESTION_QUALITY", "LOGICAL_CONSISTENCY", "SECRET_ACCURACY",
-            "GUESSER_FORMAT")
-    scores:    Dict[str, float] = {}
-    feedbacks: Dict[str, str]  = {}
-
-    for dim in dims:
-        score_match  = re.search(rf"^{dim}:\s*(\d+)", raw, re.MULTILINE)
-        reason_match = re.search(rf"^{dim}_REASON:\s*(.+)", raw, re.MULTILINE)
-
-        if score_match:
-            raw_score = int(score_match.group(1))
-            scores[dim.lower()] = max(0.0, min(1.0, (raw_score - 1) / 9.0))
-        else:
-            scores[dim.lower()] = 0.5
-            print(f"  [Warning] Could not parse score for '{dim}'")
-
-        feedbacks[dim.lower()] = reason_match.group(1).strip() if reason_match else ""
-
-    judge_won_match = re.search(r"^JUDGE_WON:\s*(YES|NO)", raw, re.MULTILINE)
+    judge_won_match = re.search(r"JUDGE_WON:\s*(YES|NO)", raw, re.MULTILINE | re.IGNORECASE)
     if judge_won_match:
-        judge_won = judge_won_match.group(1) == "YES"
+        judge_won = judge_won_match.group(1).upper() == "YES"
     else:
-        print("  [Warning] Could not parse JUDGE_WON, defaulting to record.was_correct")
-        judge_won = record.was_correct
+        print(f"  [Warning] Could not parse JUDGE_WON from: {raw!r}, defaulting to False")
+        judge_won = False
 
-    layer3_score = float(np.mean(list(scores.values())))
-
-    return (
-        scores["strategy"],
-        scores["question_quality"],
-        scores["logical_consistency"],
-        scores["secret_accuracy"],
-        scores["guesser_format"],
-        layer3_score,
-        judge_won,
-        feedbacks,
-    )
+    return 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, judge_won, {}
