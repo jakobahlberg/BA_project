@@ -28,7 +28,7 @@ MAX_HINTS = 5   # only used in tool mode
 MAX_WEB_SEARCHES = 5   # only used in tool mode
 
 # ─── Evaluation ─────────────────────────────────────────────────────────────
-RUN_JUDGE    = True
+RUN_JUDGE    = False
 DATASET_PATH = "dataset.json"
 
 # ─── Carbon tracking ────────────────────────────────────────────────────────

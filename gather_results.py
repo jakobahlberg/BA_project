@@ -18,11 +18,15 @@ SCORE_FIELDS = [
     "avg_llm_judge_logical_consistency", "avg_llm_judge_secret_accuracy",
     "avg_llm_judge_guesser_format", "avg_layer3_score", "judge_layer1_agreement",
     "avg_hints_used", "avg_web_searches_used", "avg_tool_calls_used",
+    # Win verification
+    "avg_best_guess_sim", "avg_secret_keeper_accuracy", "verified_layer1_agreement",
 ]
 
 CSV_COLUMNS = (
     ["run_id", "seed", "mode", "guesser_model", "secret_model", "num_games", "num_wins",
-     "judge_win_count"]
+     "judge_win_count",
+     "num_verified_wins", "num_high_confidence", "num_medium_confidence",
+     "num_leaked", "num_false_correct"]
     + SCORE_FIELDS
     + ["avg_diversity", "energy_kwh", "energy_per_game_wh", "co2_g", "co2_per_game_g", "adjusted_co2_per_game_g"]
 )
@@ -58,8 +62,13 @@ def parse_out(path: str) -> Optional[dict]:
         "guesser_model": get(r"Guesser model\s*:\s*(.+)"),
         "secret_model":  get(r"Secret model\s*:\s*(.+)"),
         "num_games":     num_games,
-        "num_wins":         get(r"num_wins\s*:\s*(\d+)", int),
-        "judge_win_count":  get(r"judge_win_count\s*:\s*(\d+)", int),
+        "num_wins":              get(r"num_wins\s*:\s*(\d+)", int),
+        "judge_win_count":       get(r"judge_win_count\s*:\s*(\d+)", int),
+        "num_verified_wins":     get(r"num_verified_wins\s*:\s*(\d+)", int),
+        "num_high_confidence":   get(r"num_high_confidence\s*:\s*(\d+)", int),
+        "num_medium_confidence": get(r"num_medium_confidence\s*:\s*(\d+)", int),
+        "num_leaked":            get(r"num_leaked\s*:\s*(\d+)", int),
+        "num_false_correct":     get(r"num_false_correct\s*:\s*(\d+)", int),
         "energy_kwh":    energy_kwh,
         "energy_per_game_wh": round(energy_kwh / num_games * 1000, 6) if energy_kwh and num_games else None,
         "co2_g":         co2_g,
@@ -187,7 +196,9 @@ _AGGREGATE_METRICS = [
     "avg_llm_judge_logical_consistency", "avg_llm_judge_secret_accuracy",
     "avg_llm_judge_guesser_format", "avg_layer3_score",
     # Agreement
-    "judge_layer1_agreement",
+    "judge_layer1_agreement", "verified_layer1_agreement",
+    # Win verification
+    "avg_best_guess_sim", "avg_secret_keeper_accuracy",
     # Tool usage (tool mode only; 0 for standard)
     "avg_hints_used", "avg_web_searches_used", "avg_tool_calls_used",
     # Energy (per-game so comparable across run sizes)
@@ -208,11 +219,11 @@ def _print_aggregate_summary(rows: list) -> None:
     if not rows:
         return
 
-    # Derive avg_verified_win_score (judge wins / total games) for each row
+    # Derive avg_verified_win_score (verified wins / total games) for each row
     for r in rows:
         n = r.get("num_games")
-        j = r.get("judge_win_count")
-        r["avg_verified_win_score"] = (j / n) if (n and j is not None) else None
+        v = r.get("num_verified_wins")
+        r["avg_verified_win_score"] = (v / n) if (n and v is not None) else None
 
     # Group by (mode, guesser_model, secret_model) — each group = one config run N times
     groups: dict = defaultdict(list)

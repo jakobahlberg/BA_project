@@ -59,6 +59,19 @@ class EvaluationResult:
     web_searches_used: int = 0
     tool_calls_used: int = 0       # hints_used + web_searches_used
 
+    # Win verification (multi-step deterministic pipeline)
+    verified_win: bool = False
+    win_confidence: str = "unverified"   # "high" | "medium" | "unverified"
+    step1_exact_match: bool = False
+    step2_embedding_verified: bool = False
+    best_guess_sim: float = 0.0
+    best_guess: str = ""
+    leaked: bool = False
+    step4_correct_verified: bool = False
+    false_correct: bool = False
+    correct_guess_sim: float = 0.0
+    secret_keeper_accuracy: float = 1.0
+
     details: Dict = field(default_factory=dict)
 
     def __str__(self) -> str:
@@ -113,6 +126,17 @@ class EvaluationResult:
         lines += [
             f"  Judge won             : {self.judge_won} {'✓' if outcome_match else '✗ (disagrees with layer 1)'}",
             f"  Layer 3 score         : {self.layer3_score:.3f}",
+            "",
+            "WIN VERIFICATION",
+            f"  Verified win          : {self.verified_win} ({self.win_confidence} confidence)",
+            f"  Step 1 exact match    : {self.step1_exact_match}",
+            f"  Step 2 embedding      : {self.step2_embedding_verified} "
+            f"(best sim: {self.best_guess_sim:.3f} — {self.best_guess!r})",
+            f"  Step 4 CORRECT check  : {self.step4_correct_verified} "
+            f"(sim: {self.correct_guess_sim:.3f})"
+            + (" ⚠ FALSE CORRECT" if self.false_correct else ""),
+            f"  Leaked                : {self.leaked}",
+            f"  SK accuracy           : {self.secret_keeper_accuracy:.3f}",
             "=" * 55,
         ]
         return "\n".join(lines)

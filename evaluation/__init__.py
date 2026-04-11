@@ -6,6 +6,7 @@ from evaluation.records import GameRecord, EvaluationResult
 from evaluation.layer1 import layer1_game_outcome
 from evaluation.layer2 import layer2_question_quality
 from evaluation.layer3 import layer3_llm_judge, load_judge_model
+from evaluation.win_verifier import verify_win
 
 
 def evaluate_game(
@@ -43,6 +44,8 @@ def evaluate_game(
         judge_won = record.was_correct
         feedbacks = {}
 
+    wv = verify_win(record, embed_model_name=embed_model_name)
+
     return EvaluationResult(
         win_score=win,
         efficiency_score=eff,
@@ -62,6 +65,17 @@ def evaluate_game(
         hints_used=record.hints_used,
         web_searches_used=record.web_searches_used,
         tool_calls_used=record.hints_used + record.web_searches_used,
+        verified_win=wv.verified_win,
+        win_confidence=wv.win_confidence,
+        step1_exact_match=wv.step1_exact_match,
+        step2_embedding_verified=wv.step2_embedding_verified,
+        best_guess_sim=wv.best_guess_sim,
+        best_guess=wv.best_guess,
+        leaked=wv.leaked,
+        step4_correct_verified=wv.step4_correct_verified,
+        false_correct=wv.false_correct,
+        correct_guess_sim=wv.correct_guess_sim,
+        secret_keeper_accuracy=wv.secret_keeper_accuracy,
         details={
             "secret": record.secret,
             "turns_used": record.turns_used,
@@ -97,14 +111,23 @@ def summarise_results(results: List[EvaluationResult]) -> Dict:
         "llm_judge_logical_consistency", "llm_judge_secret_accuracy",
         "llm_judge_guesser_format", "layer3_score",
         "hints_used", "web_searches_used", "tool_calls_used",
+        "best_guess_sim", "secret_keeper_accuracy",
     ]
     summary: Dict = {}
     for f in fields:
         summary[f"avg_{f}"] = float(np.mean([getattr(r, f) for r in results]))
-    summary["num_games"]       = len(results)
-    summary["num_wins"]        = int(sum(r.win_score for r in results))
-    summary["judge_win_count"] = int(sum(r.judge_won for r in results))
+    summary["num_games"]             = len(results)
+    summary["num_wins"]              = int(sum(r.win_score for r in results))
+    summary["num_verified_wins"]     = int(sum(r.verified_win for r in results))
+    summary["num_high_confidence"]   = int(sum(r.win_confidence == "high" for r in results))
+    summary["num_medium_confidence"] = int(sum(r.win_confidence == "medium" for r in results))
+    summary["num_leaked"]            = int(sum(r.leaked for r in results))
+    summary["num_false_correct"]     = int(sum(r.false_correct for r in results))
+    summary["judge_win_count"]       = int(sum(r.judge_won for r in results))
     summary["judge_layer1_agreement"] = float(
         np.mean([r.judge_won == bool(r.win_score) for r in results])
+    )
+    summary["verified_layer1_agreement"] = float(
+        np.mean([r.verified_win == bool(r.win_score) for r in results])
     )
     return summary

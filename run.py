@@ -56,7 +56,8 @@ def main() -> None:
     # ── Load models ──────────────────────────────────────────────────────────
     guesser_model, guesser_tokenizer = load_model(config.GUESSER_MODEL)
     secret_model,  secret_tokenizer  = load_model(config.SECRET_MODEL)
-    load_judge_model(config.JUDGE_MODEL)
+    if config.RUN_JUDGE:
+        load_judge_model(config.JUDGE_MODEL)
 
     # ── Carbon tracking ──────────────────────────────────────────────────────
     os.makedirs(config.CARBON_LOG_DIR, exist_ok=True)
