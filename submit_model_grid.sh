@@ -2,10 +2,10 @@
 set -euo pipefail
 
 # Usage:
-#   bash submit_model_grid.sh [config_csv] [num_runs] [start_seed] [batch_size] [poll_seconds] [tag_prefix]
+#   bash submit_model_grid.sh [config_csv] [num_runs] [start_seed] [batch_size] [poll_seconds] [tag_prefix] [wrapper_mode]
 #
 # Example:
-#   bash submit_model_grid.sh model_configs.csv 10 1 2 30 grid
+#   bash submit_model_grid.sh model_configs.csv 10 1 2 30 grid serial
 #
 # The script supports two CSV row formats:
 #   1) Explicit configuration row:
@@ -22,6 +22,12 @@ START_SEED=${3:-1}
 BATCH_SIZE=${4:-2}
 POLL_SECONDS=${5:-30}
 TAG_PREFIX=${6:-grid}
+WRAPPER_MODE=${7:-serial}
+
+if [ "${WRAPPER_MODE}" != "serial" ] && [ "${WRAPPER_MODE}" != "parallel" ]; then
+  echo "Invalid wrapper_mode: ${WRAPPER_MODE} (use 'serial' or 'parallel')"
+  exit 1
+fi
 
 if ! command -v sbatch >/dev/null 2>&1; then
   echo "sbatch not found. Run this on the cluster login node."
@@ -35,6 +41,28 @@ fi
 
 echo "Submitting model grid from ${CONFIG_CSV}"
 echo "Per config: runs=${NUM_RUNS}, start_seed=${START_SEED}, batch_size=${BATCH_SIZE}, poll_seconds=${POLL_SECONDS}"
+echo "Wrapper mode: ${WRAPPER_MODE}"
+
+prev_wrapper_job_id=""
+
+submit_wrapper() {
+  local mode="$1"
+  local gm="$2"
+  local sm="$3"
+  local jm="$4"
+  local run_tag="$5"
+
+  local -a sbatch_args
+  sbatch_args+=(--parsable)
+  if [ "${WRAPPER_MODE}" = "serial" ] && [ -n "${prev_wrapper_job_id}" ]; then
+    # Chain wrappers so only one configuration wrapper runs at a time.
+    sbatch_args+=(--dependency="afterany:${prev_wrapper_job_id}")
+  fi
+  sbatch_args+=(--export=ALL,MODE="${mode}",GUESSER_MODEL="${gm}",SECRET_MODEL="${sm}",JUDGE_MODEL="${jm}")
+  sbatch_args+=(submit_bulk_seeds.sh "${NUM_RUNS}" "${START_SEED}" "${BATCH_SIZE}" "${POLL_SECONDS}" "${run_tag}")
+
+  sbatch "${sbatch_args[@]}"
+}
 
 while IFS=',' read -r label mode guesser secret judge; do
   # Skip header / empty / comments
@@ -64,9 +92,8 @@ while IFS=',' read -r label mode guesser secret judge; do
 
         run_label="${label}_g$(basename "${gm}")_s$(basename "${sm}")"
         run_tag="${TAG_PREFIX}_${run_label}_$(date +%F_%H%M%S)"
-        wrapper_job_id=$(sbatch --parsable \
-          --export=ALL,MODE="${mode}",GUESSER_MODEL="${gm}",SECRET_MODEL="${sm}",JUDGE_MODEL="${judge_model}" \
-          submit_bulk_seeds.sh "${NUM_RUNS}" "${START_SEED}" "${BATCH_SIZE}" "${POLL_SECONDS}" "${run_tag}")
+        wrapper_job_id=$(submit_wrapper "${mode}" "${gm}" "${sm}" "${judge_model}" "${run_tag}")
+        prev_wrapper_job_id="${wrapper_job_id}"
 
         echo "Submitted config=${run_label} wrapper_job_id=${wrapper_job_id} run_tag=${run_tag}"
       done
@@ -76,9 +103,8 @@ while IFS=',' read -r label mode guesser secret judge; do
 
   # Explicit row: label,mode,guesser_model,secret_model,judge_model
   run_tag="${TAG_PREFIX}_${label}_$(date +%F_%H%M%S)"
-  wrapper_job_id=$(sbatch --parsable \
-    --export=ALL,MODE="${mode}",GUESSER_MODEL="${guesser}",SECRET_MODEL="${secret}",JUDGE_MODEL="${judge}" \
-    submit_bulk_seeds.sh "${NUM_RUNS}" "${START_SEED}" "${BATCH_SIZE}" "${POLL_SECONDS}" "${run_tag}")
+  wrapper_job_id=$(submit_wrapper "${mode}" "${guesser}" "${secret}" "${judge}" "${run_tag}")
+  prev_wrapper_job_id="${wrapper_job_id}"
 
   echo "Submitted config=${label} wrapper_job_id=${wrapper_job_id} run_tag=${run_tag}"
 done < "${CONFIG_CSV}"
