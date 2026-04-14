@@ -89,7 +89,7 @@ If two plausible candidates remain or a guess was wrong, a brief WEB_SEARCH can 
 Tools are usually more efficient than asking another question when you feel stuck.
 In most rounds, using at least one tool improves efficiency; avoid zero tool use unless you’re highly confident.
 After any wrong guess, consider using a tool before the next question.
-When you use WEB_SEARCH, write a short concrete query (e.g., “golden retriever vs labrador differences”).
+When you use WEB_SEARCH, write a short concrete query (e.g., “Shepherd vs labrador differences”).
 If you have asked 4 or more questions and are not ready to guess, using a tool is the recommended next step.
 
 STRICT RULES:
