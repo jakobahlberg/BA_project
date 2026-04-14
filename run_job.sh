@@ -41,6 +41,18 @@ PY
 export HF_HOME="${HF_HOME:-$HOME/.cache/huggingface}"
 export TRANSFORMERS_CACHE="${TRANSFORMERS_CACHE:-$HF_HOME}"
 
+# HuggingFace token — required for gated models (e.g. Gemma).
+# Reads the token saved by `hf auth login` on the login node.
+if [ -z "${HF_TOKEN:-}" ]; then
+    _TOKEN_FILE="${HF_HOME}/token"
+    if [ -f "${_TOKEN_FILE}" ]; then
+        export HF_TOKEN=$(cat "${_TOKEN_FILE}")
+        echo "HF_TOKEN loaded from ${_TOKEN_FILE}"
+    else
+        export HF_TOKEN="hf_REPLACE_WITH_YOUR_TOKEN"
+    fi
+fi
+
 mkdir -p "$SLURM_SUBMIT_DIR/carbon_logs"
 
 # Run from the directory where sbatch was called — works for any home dir
