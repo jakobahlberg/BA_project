@@ -18,6 +18,7 @@ outputs/
 carbon_logs/
 *.out
 *.log
+results/qwen_out_*/
 
 # Jupyter
 .ipynb_checkpoints/
