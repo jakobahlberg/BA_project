@@ -116,7 +116,15 @@ def _step1_normalized_match(
     norm_secret = _normalize(secret)
     for action, content, raw_response in turn_log:
         if action == "guess" and "CORRECT" in raw_response.upper():
-            if _normalize(content) == norm_secret:
+            norm_guess = _normalize(content)
+            if norm_guess == norm_secret:
+                return True
+            # "margherita pizza" → contains secret "pizza"; "python" → in "python snake"
+            # Guard: only apply when the guess is short (≤ 4 words) so a long
+            # hallucinated string listing many candidates can't accidentally match.
+            if len(norm_guess.split()) <= 2 and (
+                norm_secret in norm_guess or norm_guess in norm_secret
+            ):
                 return True
     return False
 

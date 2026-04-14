@@ -15,6 +15,39 @@ import torch
 from transformers import AutoModelForCausalLM, AutoTokenizer
 
 
+def _is_gemma(tokenizer: AutoTokenizer) -> bool:
+    return "gemma" in tokenizer.name_or_path.lower()
+
+
+def _prepare_messages(messages: list[dict], tokenizer: AutoTokenizer) -> list[dict]:
+    """
+    Normalize a chat message list for models that don't support a system role.
+
+    Gemma requires strict user/assistant alternation and has no system turn.
+    We merge any leading system message into the first user message so the
+    conversation starts with a user turn as Gemma expects.
+    """
+    if not _is_gemma(tokenizer):
+        return messages
+
+    prepared: list[dict] = []
+    pending_system: str | None = None
+
+    for msg in messages:
+        if msg["role"] == "system":
+            pending_system = msg["content"]
+        elif msg["role"] == "user" and pending_system is not None:
+            prepared.append({
+                "role": "user",
+                "content": f"{pending_system}\n\n{msg['content']}",
+            })
+            pending_system = None
+        else:
+            prepared.append(msg)
+
+    return prepared
+
+
 def load_model(model_name: str) -> tuple:
     """
     Load a causal LM and its tokenizer from HuggingFace.
@@ -58,8 +91,9 @@ def generate_answer(
     Returns:
         Decoded response string (stripped, special tokens removed).
     """
+    prepared = _prepare_messages(messages, tokenizer)
     text = tokenizer.apply_chat_template(
-        messages,
+        prepared,
         tokenize=False,
         add_generation_prompt=True,
         enable_thinking=False,
