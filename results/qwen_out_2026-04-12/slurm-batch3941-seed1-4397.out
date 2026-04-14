@@ -1,0 +1,821 @@
+CUDA_VISIBLE_DEVICES=0,1,2
+Sun Apr 12 22:14:11 2026       
++-----------------------------------------------------------------------------------------+
+| NVIDIA-SMI 570.86.15              Driver Version: 570.86.15      CUDA Version: 12.8     |
+|-----------------------------------------+------------------------+----------------------+
+| GPU  Name                 Persistence-M | Bus-Id          Disp.A | Volatile Uncorr. ECC |
+| Fan  Temp   Perf          Pwr:Usage/Cap |           Memory-Usage | GPU-Util  Compute M. |
+|                                         |                        |               MIG M. |
+|=========================================+========================+======================|
+|   0  NVIDIA TITAN RTX               On  |   00000000:1B:00.0 Off |                  N/A |
+| 43%   55C    P8             21W /  280W |       1MiB /  24576MiB |      0%      Default |
+|                                         |                        |                  N/A |
++-----------------------------------------+------------------------+----------------------+
+|   1  NVIDIA TITAN RTX               On  |   00000000:3D:00.0 Off |                  N/A |
+| 41%   44C    P8             30W /  280W |       1MiB /  24576MiB |      0%      Default |
+|                                         |                        |                  N/A |
++-----------------------------------------+------------------------+----------------------+
+|   2  NVIDIA TITAN RTX               On  |   00000000:3E:00.0 Off |                  N/A |
+| 41%   50C    P8             26W /  280W |       1MiB /  24576MiB |      0%      Default |
+|                                         |                        |                  N/A |
++-----------------------------------------+------------------------+----------------------+
+                                                                                         
++-----------------------------------------------------------------------------------------+
+| Processes:                                                                              |
+|  GPU   GI   CI              PID   Type   Process name                        GPU Memory |
+|        ID   ID                                                               Usage      |
+|=========================================================================================|
+|  No running processes found                                                             |
++-----------------------------------------------------------------------------------------+
+CUDA_VISIBLE_DEVICES: 0,1,2
+CUDA available: True
+CUDA devices: 3
+Warning: You are sending unauthenticated requests to the HF Hub. Please set a HF_TOKEN to enable higher rate limits and faster downloads.
+`torch_dtype` is deprecated! Use `dtype` instead!
+Experiment seed: 1
+[Models] Loading: Qwen/Qwen3-8B
+Loading weights:   0%|          | 0/399 [00:00<?, ?it/s]Loading weights:   0%|          | 1/399 [00:01<09:31,  1.44s/it]Loading weights:   7%|▋         | 27/399 [00:01<00:16, 22.61it/s]Loading weights:   9%|▉         | 37/399 [00:01<00:12, 29.81it/s]Loading weights:  12%|█▏        | 46/399 [00:01<00:09, 36.42it/s]Loading weights:  14%|█▎        | 54/399 [00:02<00:08, 39.82it/s]Loading weights:  15%|█▌        | 61/399 [00:02<00:08, 39.94it/s]Loading weights:  18%|█▊        | 71/399 [00:02<00:07, 45.23it/s]Loading weights:  21%|██        | 82/399 [00:02<00:06, 48.74it/s]Loading weights:  23%|██▎       | 92/399 [00:02<00:05, 57.81it/s]Loading weights:  25%|██▌       | 100/399 [00:02<00:05, 58.40it/s]Loading weights:  27%|██▋       | 109/399 [00:02<00:04, 65.15it/s]Loading weights:  29%|██▉       | 117/399 [00:03<00:04, 56.81it/s]Loading weights:  31%|███▏      | 125/399 [00:03<00:04, 60.89it/s]Loading weights:  34%|███▍      | 135/399 [00:03<00:03, 68.08it/s]Loading weights:  36%|███▌      | 143/399 [00:03<00:03, 64.89it/s]Loading weights:  38%|███▊      | 150/399 [00:03<00:04, 57.16it/s]Loading weights:  40%|███▉      | 159/399 [00:03<00:04, 56.19it/s]Loading weights:  42%|████▏     | 169/399 [00:03<00:03, 61.52it/s]Loading weights:  45%|████▍     | 178/399 [00:04<00:03, 64.48it/s]Loading weights:  46%|████▋     | 185/399 [00:04<00:03, 61.95it/s]Loading weights:  48%|████▊     | 192/399 [00:04<00:03, 57.82it/s]Loading weights:  51%|█████     | 202/399 [00:04<00:03, 59.30it/s]Loading weights:  53%|█████▎    | 213/399 [00:04<00:02, 67.44it/s]Loading weights:  55%|█████▌    | 220/399 [00:04<00:02, 60.01it/s]Loading weights:  57%|█████▋    | 227/399 [00:04<00:03, 50.57it/s]Loading weights:  59%|█████▉    | 235/399 [00:05<00:02, 55.88it/s]Loading weights:  61%|██████    | 244/399 [00:05<00:02, 60.68it/s]Loading weights:  63%|██████▎   | 251/399 [00:05<00:02, 55.31it/s]Loading weights:  65%|██████▍   | 258/399 [00:05<00:02, 55.07it/s]Loading weights:  67%|██████▋   | 269/399 [00:05<00:02, 56.14it/s]Loading weights:  70%|███████   | 280/399 [00:05<00:02, 58.40it/s]Loading weights:  73%|███████▎  | 290/399 [00:05<00:01, 66.28it/s]Loading weights:  75%|███████▍  | 298/399 [00:06<00:01, 68.86it/s]Loading weights:  77%|███████▋  | 306/399 [00:06<00:01, 68.10it/s]Loading weights:  79%|███████▊  | 314/399 [00:06<00:01, 55.48it/s]Loading weights:  81%|████████  | 324/399 [00:06<00:01, 61.01it/s]Loading weights:  84%|████████▍ | 335/399 [00:06<00:01, 60.45it/s]Loading weights:  87%|████████▋ | 346/399 [00:06<00:00, 61.87it/s]Loading weights:  89%|████████▉ | 357/399 [00:07<00:00, 58.81it/s]Loading weights:  92%|█████████▏| 367/399 [00:07<00:00, 66.00it/s]Loading weights:  94%|█████████▍| 376/399 [00:07<00:00, 67.34it/s]Loading weights:  96%|█████████▌| 384/399 [00:07<00:00, 63.77it/s]Loading weights:  98%|█████████▊| 391/399 [00:07<00:00, 56.07it/s]Loading weights: 100%|██████████| 399/399 [00:07<00:00, 52.37it/s]
+[Models] Loaded: Qwen/Qwen3-8B
+[Models] Loading: Qwen/Qwen3.5-4B-Base
+Fetching 2 files:   0%|          | 0/2 [00:00<?, ?it/s]Fetching 2 files: 100%|██████████| 2/2 [00:00<00:00, 733.14it/s]
+The fast path is not available because one of the required library is not installed. Falling back to torch implementation. To install follow https://github.com/fla-org/flash-linear-attention#installation and https://github.com/Dao-AILab/causal-conv1d
+Loading weights:   0%|          | 0/426 [00:00<?, ?it/s]Loading weights:   0%|          | 1/426 [00:01<09:44,  1.38s/it]Loading weights:  12%|█▏        | 53/426 [00:01<00:07, 48.61it/s]Loading weights:  19%|█▊        | 79/426 [00:01<00:05, 62.13it/s]Loading weights:  23%|██▎       | 98/426 [00:02<00:05, 63.21it/s]Loading weights:  27%|██▋       | 114/426 [00:02<00:04, 72.34it/s]Loading weights:  30%|███       | 128/426 [00:02<00:03, 76.96it/s]Loading weights:  34%|███▍      | 146/426 [00:02<00:03, 88.01it/s]Loading weights:  37%|███▋      | 159/426 [00:02<00:03, 86.21it/s]Loading weights:  40%|████      | 171/426 [00:02<00:02, 92.48it/s]Loading weights:  44%|████▎     | 186/426 [00:02<00:02, 97.43it/s]Loading weights:  47%|████▋     | 200/426 [00:03<00:02, 93.05it/s]Loading weights:  52%|█████▏    | 220/426 [00:03<00:02, 100.95it/s]Loading weights:  55%|█████▍    | 234/426 [00:03<00:01, 106.50it/s]Loading weights:  58%|█████▊    | 248/426 [00:03<00:01, 106.85it/s]Loading weights:  61%|██████    | 260/426 [00:03<00:01, 92.17it/s] Loading weights:  65%|██████▌   | 278/426 [00:03<00:01, 100.76it/s]Loading weights:  69%|██████▊   | 292/426 [00:03<00:01, 104.84it/s]Loading weights:  73%|███████▎  | 310/426 [00:04<00:01, 115.62it/s]Loading weights:  77%|███████▋  | 327/426 [00:04<00:00, 122.67it/s]Loading weights:  80%|███████▉  | 340/426 [00:04<00:00, 119.63it/s]Loading weights:  83%|████████▎ | 353/426 [00:04<00:00, 112.29it/s]Loading weights:  86%|████████▌ | 365/426 [00:04<00:00, 92.62it/s] Loading weights:  90%|█████████ | 384/426 [00:04<00:00, 112.89it/s]Loading weights:  93%|█████████▎| 398/426 [00:04<00:00, 104.06it/s]Loading weights:  96%|█████████▋| 411/426 [00:04<00:00, 109.19it/s]Loading weights:  99%|█████████▉| 423/426 [00:05<00:00, 107.45it/s]Loading weights: 100%|██████████| 426/426 [00:05<00:00, 84.01it/s] 
+[Models] Loaded: Qwen/Qwen3.5-4B-Base
+CarbonTracker: WARNING - No API keys provided. Skipping intensity provider initialization.
+CarbonTracker: The following components were found: GPU with device(s) NVIDIA TITAN RTX, NVIDIA TITAN RTX, NVIDIA TITAN RTX. CPU with device(s) cpu:1, dram:0, cpu:0, dram:1.
+CarbonTracker: WARNING - No carbon intensity provider specified. Using average carbon intensity for DK: 143.30 gCO2eq/kWh.
+
+=== ROUND 1 START (TOOL MODE) ===
+Guesser: QUESTION: Is it a living thing?
+Secret: YES
+Guesser: QUESTION: Is it an animal?
+Secret: YES
+Guesser: QUESTION: Is it a mammal?
+Secret: YES
+Guesser: QUESTION: Is it a human?
+Secret: NO
+Guesser: QUESTION: Is it a domesticated animal?
+Secret: YES
+Guesser: QUESTION: Is it a dog?
+Secret: YES
+Guesser: GUESS: Golden Retriever
+Secret: CORRECT
+Guesser won in 7 turns using 0 hints and 0 web searches!
+
+=== ROUND 2 START (TOOL MODE) ===
+Guesser: QUESTION: Is it a living thing?
+Secret: YES
+Guesser: QUESTION: Is it an animal?
+Secret: YES
+Guesser: QUESTION: Is it a mammal?
+Secret: NO
+Guesser: QUESTION: Is it a bird?
+Secret: YES
+Guesser: QUESTION: Does it lay eggs?
+Secret: YES
+Guesser: QUESTION: Is it a domesticated bird?
+Secret: NO
+Guesser: QUESTION: Is it a wild bird?
+Secret: YES
+Guesser: QUESTION: Is it a bird of prey?
+Secret: NO
+Guesser: QUESTION: Does it live in trees?
+Secret: YES
+Guesser: QUESTION: Is it a type of parrot?
+Secret: NO
+Guesser: QUESTION: Is it a type of woodpecker?
+Secret: NO
+Guesser: QUESTION: Is it a type of finch?
+Secret: NO
+Guesser: USE_HINT
+[HINT 1/5] Hint 1:
+It is a living creature.
+Guesser: QUESTION: Is it a type of songbird?
+Secret: YES
+Guesser: QUESTION: Does it have bright plumage?
+Secret: YES
+Guesser: QUESTION: Is it a type of hummingbird?
+Secret: NO
+Guesser: QUESTION: Is it a type of toucan?
+Secret: NO
+Guesser: GUESS: Peacock
+Secret: WRONG
+Guesser: QUESTION: Is it a type of pheasant?
+Secret: YES
+Guesser: GUESS: Pheasant
+Secret: WRONG
+Guesser: WEB_SEARCH: pheasant vs peacock differences
+[WEB SEARCH 1/5] pheasant vs peacock differences
+[WEB SEARCH RESULT] Web search unavailable: No module named 'ddgs'
+Guesser: QUESTION: Is it a male pheasant?
+Secret: NO
+Guesser failed after 20 turns using 1 hints and 1 web searches.
+
+=== ROUND 3 START (TOOL MODE) ===
+Guesser: QUESTION: Is it a living thing?
+Secret: YES
+Guesser: QUESTION: Is it an animal?
+Secret: YES
+Guesser: QUESTION: Is it a mammal?
+Secret: NO
+Guesser: QUESTION: Is it a bird?
+Secret: NO
+Guesser: USE_HINT
+[HINT 1/5] Hint 1:
+It is a living creature.
+Guesser: QUESTION: Is it a plant?
+Secret: NO
+Guesser: QUESTION: Is it a fungus?
+Secret: NO
+Guesser: QUESTION: Is it a mineral?
+Secret: NO
+Guesser: USE_HINT
+[HINT 2/5] Hint 2:
+It is an animal without legs.
+Guesser: QUESTION: Is it an invertebrate?
+Secret: YES
+Guesser: QUESTION: Is it a worm?
+Secret: NO
+Guesser: QUESTION: Is it a jellyfish?
+Secret: NO
+Guesser: QUESTION: Is it a starfish?
+Secret: NO
+Guesser: USE_HINT
+[HINT 3/5] Hint 3:
+It is a reptile.
+Guesser: QUESTION: Is it a snake?
+Secret: YES
+Guesser: GUESS: Python
+Secret: CORRECT
+Guesser won in 13 turns using 3 hints and 0 web searches!
+
+=== ROUND 4 START (TOOL MODE) ===
+Guesser: QUESTION: Is it a living thing?
+Secret: NO
+Guesser: QUESTION: Is it an object?
+Secret: YES
+Guesser: QUESTION: Is it a man-made object?
+Secret: YES
+Guesser: QUESTION: Is it a vehicle?
+Secret: NO
+Guesser: QUESTION: Is it a tool?
+Secret: NO
+Guesser: QUESTION: Is it a piece of furniture?
+Secret: NO
+Guesser: QUESTION: Is it a household item?
+Secret: YES
+Guesser: QUESTION: Is it a kitchen item?
+Secret: YES
+Guesser: QUESTION: Is it a cooking utensil?
+Secret: NO
+Guesser: QUESTION: Is it a dining item?
+Secret: YES
+Guesser: QUESTION: Is it a type of chair?
+Secret: NO
+Guesser: QUESTION: Is it a type of table?
+Secret: NO
+Guesser: QUESTION: Is it used for serving food?
+Secret: YES
+Guesser: QUESTION: Is it a plate?
+Secret: YES
+Guesser: GUESS: Dinner plate
+Secret: WRONG
+Guesser: QUESTION: Is it made of glass?
+Secret: NO
+Guesser: QUESTION: Is it made of ceramic?
+Secret: YES
+Guesser: GUESS: Porcelain plate
+Secret: WRONG
+Guesser: WEB_SEARCH: ceramic plate vs porcelain plate differences
+[WEB SEARCH 1/5] ceramic plate vs porcelain plate differences
+[WEB SEARCH RESULT] Web search unavailable: No module named 'ddgs'
+Guesser: QUESTION: Is it typically white in color?
+Secret: YES
+Guesser: GUESS: White ceramic plate
+Secret: WRONG
+Guesser failed after 20 turns using 0 hints and 1 web searches.
+
+=== ROUND 5 START (TOOL MODE) ===
+Guesser: QUESTION: Is it a person?
+Secret: NO
+Guesser: QUESTION: Is it an animal?
+Secret: NO
+Guesser: QUESTION: Is it an object?
+Secret: NO
+Guesser: QUESTION: Is it a concept?
+Secret: NO
+Guesser: USE_HINT
+[HINT 1/5] Hint 1:
+It is not a living creature.
+Guesser: QUESTION: Is it a natural phenomenon?
+Secret: NO
+Guesser: QUESTION: Is it a man-made object?
+Secret: NO
+Guesser: QUESTION: Is it a place?
+Secret: NO
+Guesser: QUESTION: Is it a fictional character?
+Secret: NO
+Guesser: USE_HINT
+[HINT 2/5] Hint 2:
+It is something you can drink.
+Guesser: QUESTION: Is it a type of beverage?
+Secret: YES
+Guesser: QUESTION: Is it alcoholic?
+Secret: NO
+Guesser: QUESTION: Is it a non-alcoholic drink?
+Secret: YES
+Guesser: QUESTION: Is it a soft drink?
+Secret: NO
+Guesser: GUESS: Milk
+Secret: CORRECT
+Guesser won in 13 turns using 2 hints and 0 web searches!
+
+=== ROUND 6 START (TOOL MODE) ===
+Guesser: QUESTION: Is it an animal?
+Secret: NO
+Guesser: QUESTION: Is it a person?
+Secret: NO
+Guesser: QUESTION: Is it an object?
+Secret: YES
+Guesser: QUESTION: Is it a man-made object?
+Secret: YES
+Guesser: QUESTION: Is it a living thing?
+Secret: NO
+Guesser: QUESTION: Is it a natural object?
+Secret: NO
+Guesser: QUESTION: Is it a vehicle?
+Secret: NO
+Guesser: QUESTION: Is it a tool?
+Secret: NO
+Guesser: QUESTION: Is it a piece of clothing?
+Secret: NO
+Guesser: QUESTION: Is it a household item?
+Secret: NO
+Guesser: QUESTION: Is it a digital device?
+Secret: NO
+Guesser: QUESTION: Is it a musical instrument?
+Secret: NO
+Guesser: QUESTION: Is it a sports equipment?
+Secret: NO
+Guesser: QUESTION: Is it a book?
+Secret: NO
+Guesser: QUESTION: Is it a food item?
+Secret: YES
+Guesser: QUESTION: Is it a fruit?
+Secret: NO
+Guesser: QUESTION: Is it a vegetable?
+Secret: NO
+Guesser: QUESTION: Is it a processed food item?
+Secret: YES
+Guesser: QUESTION: Is it a snack food?
+Secret: YES
+Guesser: QUESTION: Is it a candy?
+Secret: NO
+Guesser failed after 20 turns using 0 hints and 0 web searches.
+
+=== ROUND 7 START (TOOL MODE) ===
+Guesser: QUESTION: Is it a living thing?
+Secret: NO
+Guesser: QUESTION: Is it an object?
+Secret: YES
+Guesser: QUESTION: Is it a man-made object?
+Secret: YES
+Guesser: QUESTION: Is it a tool?
+Secret: NO
+Guesser: USE_HINT
+[HINT 1/5] Hint 1:
+It is not a living creature.
+Guesser: QUESTION: Is it a natural object?
+Secret: NO
+Guesser: QUESTION: Is it a manufactured item used for transportation?
+Secret: NO
+Guesser: QUESTION: Is it a piece of furniture?
+Secret: NO
+Guesser: QUESTION: Is it a consumer product?
+Secret: NO
+Guesser: USE_HINT
+[HINT 2/5] Hint 2:
+It is a man-made object.
+Guesser: QUESTION: Is it an electronic device?
+Secret: NO
+Guesser: QUESTION: Is it a clothing item?
+Secret: NO
+Guesser: QUESTION: Is it a container?
+Secret: NO
+Guesser: USE_HINT
+[HINT 3/5] Hint 3:
+It is a work of art.
+Guesser: QUESTION: Is it a painting?
+Secret: NO
+Guesser: GUESS: Mona Lisa
+Secret: CORRECT
+Guesser won in 13 turns using 3 hints and 0 web searches!
+
+=== ROUND 8 START (TOOL MODE) ===
+Guesser: QUESTION: Is it an animal?
+Secret: NO
+Guesser: QUESTION: Is it a person?
+Secret: NO
+Guesser: QUESTION: Is it an object?
+Secret: YES
+Guesser: QUESTION: Is it a living thing?
+Secret: NO
+Guesser: USE_HINT
+[HINT 1/5] Hint 1:
+It is not a living creature.
+Guesser: QUESTION: Is it a man-made object?
+Secret: YES
+Guesser: QUESTION: Is it a tool?
+Secret: NO
+Guesser: QUESTION: Is it a piece of furniture?
+Secret: NO
+Guesser: QUESTION: Is it a vehicle?
+Secret: YES
+Guesser: USE_HINT
+[HINT 2/5] Hint 2:
+It is a man-made object.
+Guesser: QUESTION: Is it a car?
+Secret: NO
+Guesser: GUESS: Car
+Secret: CORRECT
+Guesser won in 10 turns using 2 hints and 0 web searches!
+
+=== ROUND 9 START (TOOL MODE) ===
+Guesser: QUESTION: Is it a living thing?
+Secret: NO
+Guesser: QUESTION: Is it an object?
+Secret: YES
+Guesser: QUESTION: Is it a man-made object?
+Secret: YES
+Guesser: QUESTION: Is it a vehicle?
+Secret: NO
+Guesser: QUESTION: Is it a tool?
+Secret: NO
+Guesser: QUESTION: Is it a piece of furniture?
+Secret: NO
+Guesser: QUESTION: Is it a household item?
+Secret: YES
+Guesser: QUESTION: Is it something you wear?
+Secret: NO
+Guesser: QUESTION: Is it something you use in the kitchen?
+Secret: NO
+Guesser: QUESTION: Is it something you use in the bathroom?
+Secret: NO
+Guesser: USE_HINT
+[HINT 1/5] Hint 1:
+It is not a living creature.
+Guesser: QUESTION: Is it made of glass?
+Secret: NO
+Guesser: QUESTION: Is it made of metal?
+Secret: NO
+Guesser: QUESTION: Is it made of plastic?
+Secret: NO
+Guesser: QUESTION: Is it made of wood?
+Secret: NO
+Guesser: USE_HINT
+[HINT 2/5] Hint 2:
+It is a man-made object.
+Guesser: QUESTION: Is it electronic?
+Secret: NO
+Guesser: QUESTION: Is it a container?
+Secret: YES
+Guesser: QUESTION: Does it have a lid?
+Secret: YES
+Guesser: QUESTION: Is it a jar?
+Secret: YES
+Guesser: GUESS: Jam jar
+Secret: WRONG
+Guesser: QUESTION: Is it used for storing liquids?
+Secret: YES
+Guesser failed after 20 turns using 2 hints and 0 web searches.
+CarbonTracker: Average carbon intensity during training was 143.30 gCO2eq/kWh. 
+CarbonTracker: 
+Actual consumption for -1 epoch(s):
+	Time:	0:00:00
+	Energy:	0.000000000000 kWh
+	CO2eq:	0.000000000000 g
+	This is equivalent to:
+	0.000000000000 km travelled by car
+CarbonTracker: Finished monitoring.
+[Evaluator] Loading embedding model: all-MiniLM-L6-v2
+Loading weights:   0%|          | 0/103 [00:00<?, ?it/s]Loading weights: 100%|██████████| 103/103 [00:00<00:00, 4315.52it/s]
+[1mBertModel LOAD REPORT[0m from: sentence-transformers/all-MiniLM-L6-v2
+Key                     | Status     |  | 
+------------------------+------------+--+-
+embeddings.position_ids | UNEXPECTED |  | 
+
+[3mNotes:
+- UNEXPECTED[3m	:can be ignored when loading from different task/architecture; not ok if you expect identical arch.[0m
+=======================================================
+EVALUATION RESULTS
+=======================================================
+  Secret          : golden retriever
+  Won             : True
+  Turns used      : 7 / 20
+
+LAYER 1 — Game Outcome
+  Win                   : 1.000
+  Efficiency            : 0.850
+  Secret reliability    : 1.000
+  Layer 1 score         : 0.955
+
+LAYER 2 — Question Quality
+  Semantic relevance    : 0.691
+  Canonical coverage    : 0.833
+  Information gain      : 0.326
+  Layer 2 score         : 0.588
+
+  Diversity per question (higher = more novel than prior questions):
+  Q1:1.00  Q2:0.20  Q3:0.16  Q4:0.17  Q5:0.20  Q6:0.17
+
+LAYER 3 — Judge
+  Strategy              : 0.000
+  Question quality      : 0.000
+  Logical consistency   : 0.000
+  Secret accuracy       : 0.000
+  Guesser format        : 0.000
+  Judge won             : True ✓
+  Layer 3 score         : 0.000
+
+WIN VERIFICATION
+  Verified win          : True (high confidence)
+  Step 1 exact match    : True
+  Step 2 embedding      : True (best sim: 1.000 — 'Golden Retriever')
+  Step 4 CORRECT check  : True (sim: 1.000)
+  Leaked                : False
+  SK accuracy           : 1.000
+=======================================================
+=======================================================
+EVALUATION RESULTS
+=======================================================
+  Secret          : dove
+  Won             : False
+  Turns used      : 20 / 20
+
+LAYER 1 — Game Outcome
+  Win                   : 0.000
+  Efficiency            : 0.000
+  Secret reliability    : 1.000
+  Layer 1 score         : 0.200
+
+LAYER 2 — Question Quality
+  Semantic relevance    : 0.660
+  Canonical coverage    : 0.278
+  Information gain      : 0.601
+  Layer 2 score         : 0.522
+
+  Diversity per question (higher = more novel than prior questions):
+  Q1:1.00  Q2:0.20  Q3:0.16  Q4:0.19  Q5:0.36  Q6:0.23  Q7:0.22  Q8:0.20  Q9:0.29  Q10:0.24  Q11:0.26  Q12:0.23  Q13:0.24  Q14:0.28  Q15:0.21  Q16:0.30  Q17:0.23  Q18:0.25
+
+LAYER 3 — Judge
+  Strategy              : 0.000
+  Question quality      : 0.000
+  Logical consistency   : 0.000
+  Secret accuracy       : 0.000
+  Guesser format        : 0.000
+  Judge won             : False ✓
+  Layer 3 score         : 0.000
+
+WIN VERIFICATION
+  Verified win          : False (unverified confidence)
+  Step 1 exact match    : False
+  Step 2 embedding      : False (best sim: 0.513 — 'Peacock')
+  Step 4 CORRECT check  : False (sim: 0.000)
+  Leaked                : False
+  SK accuracy           : 1.000
+=======================================================
+=======================================================
+EVALUATION RESULTS
+=======================================================
+  Secret          : python snake
+  Won             : True
+  Turns used      : 13 / 20
+
+LAYER 1 — Game Outcome
+  Win                   : 1.000
+  Efficiency            : 0.400
+  Secret reliability    : 1.000
+  Layer 1 score         : 0.820
+
+LAYER 2 — Question Quality
+  Semantic relevance    : 0.667
+  Canonical coverage    : 0.667
+  Information gain      : 0.357
+  Layer 2 score         : 0.543
+
+  Diversity per question (higher = more novel than prior questions):
+  Q1:1.00  Q2:0.20  Q3:0.16  Q4:0.19  Q5:0.20  Q6:0.28  Q7:0.28  Q8:0.27  Q9:0.25  Q10:0.25  Q11:0.23  Q12:0.22
+
+LAYER 3 — Judge
+  Strategy              : 0.000
+  Question quality      : 0.000
+  Logical consistency   : 0.000
+  Secret accuracy       : 0.000
+  Guesser format        : 0.000
+  Judge won             : True ✓
+  Layer 3 score         : 0.000
+
+WIN VERIFICATION
+  Verified win          : False (unverified confidence)
+  Step 1 exact match    : False
+  Step 2 embedding      : False (best sim: 0.650 — 'Python')
+  Step 4 CORRECT check  : False (sim: 0.650)
+  Leaked                : False
+  SK accuracy           : 1.000
+=======================================================
+=======================================================
+EVALUATION RESULTS
+=======================================================
+  Secret          : pizza
+  Won             : False
+  Turns used      : 20 / 20
+
+LAYER 1 — Game Outcome
+  Win                   : 0.000
+  Efficiency            : 0.000
+  Secret reliability    : 1.000
+  Layer 1 score         : 0.200
+
+LAYER 2 — Question Quality
+  Semantic relevance    : 0.597
+  Canonical coverage    : 0.647
+  Information gain      : 0.426
+  Layer 2 score         : 0.543
+
+  Diversity per question (higher = more novel than prior questions):
+  Q1:1.00  Q2:0.22  Q3:0.21  Q4:0.24  Q5:0.25  Q6:0.25  Q7:0.27  Q8:0.25  Q9:0.29  Q10:0.25  Q11:0.28  Q12:0.28  Q13:0.31  Q14:0.27  Q15:0.32  Q16:0.33  Q17:0.37
+
+LAYER 3 — Judge
+  Strategy              : 0.000
+  Question quality      : 0.000
+  Logical consistency   : 0.000
+  Secret accuracy       : 0.000
+  Guesser format        : 0.000
+  Judge won             : False ✓
+  Layer 3 score         : 0.000
+
+WIN VERIFICATION
+  Verified win          : False (unverified confidence)
+  Step 1 exact match    : False
+  Step 2 embedding      : False (best sim: 0.508 — 'Dinner plate')
+  Step 4 CORRECT check  : False (sim: 0.000)
+  Leaked                : False
+  SK accuracy           : 1.000
+=======================================================
+=======================================================
+EVALUATION RESULTS
+=======================================================
+  Secret          : milk
+  Won             : True
+  Turns used      : 13 / 20
+
+LAYER 1 — Game Outcome
+  Win                   : 1.000
+  Efficiency            : 0.400
+  Secret reliability    : 1.000
+  Layer 1 score         : 0.820
+
+LAYER 2 — Question Quality
+  Semantic relevance    : 0.603
+  Canonical coverage    : 0.667
+  Information gain      : 0.310
+  Layer 2 score         : 0.505
+
+  Diversity per question (higher = more novel than prior questions):
+  Q1:1.00  Q2:0.24  Q3:0.20  Q4:0.30  Q5:0.32  Q6:0.28  Q7:0.33  Q8:0.33  Q9:0.34  Q10:0.33  Q11:0.32  Q12:0.31
+
+LAYER 3 — Judge
+  Strategy              : 0.000
+  Question quality      : 0.000
+  Logical consistency   : 0.000
+  Secret accuracy       : 0.000
+  Guesser format        : 0.000
+  Judge won             : True ✓
+  Layer 3 score         : 0.000
+
+WIN VERIFICATION
+  Verified win          : True (high confidence)
+  Step 1 exact match    : True
+  Step 2 embedding      : True (best sim: 1.000 — 'Milk')
+  Step 4 CORRECT check  : True (sim: 1.000)
+  Leaked                : False
+  SK accuracy           : 1.000
+=======================================================
+=======================================================
+EVALUATION RESULTS
+=======================================================
+  Secret          : burger
+  Won             : False
+  Turns used      : 20 / 20
+
+LAYER 1 — Game Outcome
+  Win                   : 0.000
+  Efficiency            : 0.000
+  Secret reliability    : 1.000
+  Layer 1 score         : 0.200
+
+LAYER 2 — Question Quality
+  Semantic relevance    : 0.598
+  Canonical coverage    : 0.700
+  Information gain      : 0.362
+  Layer 2 score         : 0.534
+
+  Diversity per question (higher = more novel than prior questions):
+  Q1:1.00  Q2:0.24  Q3:0.20  Q4:0.23  Q5:0.23  Q6:0.22  Q7:0.24  Q8:0.26  Q9:0.27  Q10:0.27  Q11:0.32  Q12:0.29  Q13:0.29  Q14:0.31  Q15:0.28  Q16:0.29  Q17:0.28  Q18:0.31  Q19:0.29  Q20:0.27
+
+LAYER 3 — Judge
+  Strategy              : 0.000
+  Question quality      : 0.000
+  Logical consistency   : 0.000
+  Secret accuracy       : 0.000
+  Guesser format        : 0.000
+  Judge won             : False ✓
+  Layer 3 score         : 0.000
+
+WIN VERIFICATION
+  Verified win          : False (unverified confidence)
+  Step 1 exact match    : False
+  Step 2 embedding      : False (best sim: 0.000 — '')
+  Step 4 CORRECT check  : False (sim: 0.000)
+  Leaked                : False
+  SK accuracy           : 1.000
+=======================================================
+=======================================================
+EVALUATION RESULTS
+=======================================================
+  Secret          : painting
+  Won             : True
+  Turns used      : 13 / 20
+
+LAYER 1 — Game Outcome
+  Win                   : 1.000
+  Efficiency            : 0.400
+  Secret reliability    : 1.000
+  Layer 1 score         : 0.820
+
+LAYER 2 — Question Quality
+  Semantic relevance    : 0.599
+  Canonical coverage    : 0.833
+  Information gain      : 0.187
+  Layer 2 score         : 0.504
+
+  Diversity per question (higher = more novel than prior questions):
+  Q1:1.00  Q2:0.22  Q3:0.21  Q4:0.26  Q5:0.21  Q6:0.31  Q7:0.27  Q8:0.32  Q9:0.28  Q10:0.28  Q11:0.30  Q12:0.30
+
+LAYER 3 — Judge
+  Strategy              : 0.000
+  Question quality      : 0.000
+  Logical consistency   : 0.000
+  Secret accuracy       : 0.000
+  Guesser format        : 0.000
+  Judge won             : True ✓
+  Layer 3 score         : 0.000
+
+WIN VERIFICATION
+  Verified win          : False (unverified confidence)
+  Step 1 exact match    : False
+  Step 2 embedding      : False (best sim: 0.389 — 'Mona Lisa')
+  Step 4 CORRECT check  : False (sim: 0.389)
+  Leaked                : False
+  SK accuracy           : 1.000
+=======================================================
+=======================================================
+EVALUATION RESULTS
+=======================================================
+  Secret          : car
+  Won             : True
+  Turns used      : 10 / 20
+
+LAYER 1 — Game Outcome
+  Win                   : 1.000
+  Efficiency            : 0.650
+  Secret reliability    : 1.000
+  Layer 1 score         : 0.895
+
+LAYER 2 — Question Quality
+  Semantic relevance    : 0.672
+  Canonical coverage    : 0.778
+  Information gain      : 0.360
+  Layer 2 score         : 0.579
+
+  Diversity per question (higher = more novel than prior questions):
+  Q1:1.00  Q2:0.24  Q3:0.20  Q4:0.23  Q5:0.24  Q6:0.27  Q7:0.27  Q8:0.23  Q9:0.19
+
+LAYER 3 — Judge
+  Strategy              : 0.000
+  Question quality      : 0.000
+  Logical consistency   : 0.000
+  Secret accuracy       : 0.000
+  Guesser format        : 0.000
+  Judge won             : True ✓
+  Layer 3 score         : 0.000
+
+WIN VERIFICATION
+  Verified win          : True (high confidence)
+  Step 1 exact match    : True
+  Step 2 embedding      : True (best sim: 1.000 — 'Car')
+  Step 4 CORRECT check  : True (sim: 1.000)
+  Leaked                : False
+  SK accuracy           : 1.000
+=======================================================
+=======================================================
+EVALUATION RESULTS
+=======================================================
+  Secret          : door
+  Won             : False
+  Turns used      : 20 / 20
+
+LAYER 1 — Game Outcome
+  Win                   : 0.000
+  Efficiency            : 0.000
+  Secret reliability    : 1.000
+  Layer 1 score         : 0.200
+
+LAYER 2 — Question Quality
+  Semantic relevance    : 0.595
+  Canonical coverage    : 0.789
+  Information gain      : 0.381
+  Layer 2 score         : 0.568
+
+  Diversity per question (higher = more novel than prior questions):
+  Q1:1.00  Q2:0.22  Q3:0.21  Q4:0.24  Q5:0.25  Q6:0.25  Q7:0.27  Q8:0.33  Q9:0.31  Q10:0.31  Q11:0.32  Q12:0.29  Q13:0.27  Q14:0.27  Q15:0.30  Q16:0.29  Q17:0.36  Q18:0.28  Q19:0.34
+
+LAYER 3 — Judge
+  Strategy              : 0.000
+  Question quality      : 0.000
+  Logical consistency   : 0.000
+  Secret accuracy       : 0.000
+  Guesser format        : 0.000
+  Judge won             : False ✓
+  Layer 3 score         : 0.000
+
+WIN VERIFICATION
+  Verified win          : False (unverified confidence)
+  Step 1 exact match    : False
+  Step 2 embedding      : False (best sim: 0.316 — 'Jam jar')
+  Step 4 CORRECT check  : False (sim: 0.000)
+  Leaked                : False
+  SK accuracy           : 1.000
+=======================================================
+
+=== SUMMARY ===
+Mode           : tool
+Guesser model  : Qwen/Qwen3-8B
+Secret model   : Qwen/Qwen3.5-4B-Base
+Total rounds   : 9
+Total correct  : 5
+Avg turns      : 15.11
+
+Category: animals
+  Rounds  : 3
+  Correct : 2
+  Avg turns: 13.33
+
+Category: foods
+  Rounds  : 3
+  Correct : 1
+  Avg turns: 17.67
+
+Category: objects
+  Rounds  : 3
+  Correct : 2
+  Avg turns: 14.33
+
+=== EVALUATION SUMMARY (all rounds) ===
+  avg_win_score: 0.556
+  avg_efficiency_score: 0.300
+  avg_secret_reliability_score: 1.000
+  avg_layer1_score: 0.568
+  avg_semantic_relevance_score: 0.631
+  avg_canonical_coverage_score: 0.688
+  avg_information_gain_score: 0.368
+  avg_layer2_score: 0.543
+  avg_llm_judge_strategy: 0.000
+  avg_llm_judge_question_quality: 0.000
+  avg_llm_judge_logical_consistency: 0.000
+  avg_llm_judge_secret_accuracy: 0.000
+  avg_llm_judge_guesser_format: 0.000
+  avg_layer3_score: 0.000
+  avg_hints_used: 1.444
+  avg_web_searches_used: 0.222
+  avg_tool_calls_used: 1.667
+  avg_best_guess_sim: 0.597
+  avg_secret_keeper_accuracy: 1.000
+  num_games: 9
+  num_wins: 5
+  num_verified_wins: 3
+  num_high_confidence: 3
+  num_medium_confidence: 0
+  num_leaked: 0
+  num_false_correct: 0
+  judge_win_count: 5
+  judge_layer1_agreement: 1.000
+  verified_layer1_agreement: 0.778
+
+guesser_model_name: Qwen/Qwen3-8B
+secret_model_name:  Qwen/Qwen3.5-4B-Base
+experiment_seed:    1
+
+=== CARBON SUMMARY ===
+  Total energy     : 0.000000 kWh
+  Total CO2eq      : 0.0000 g
