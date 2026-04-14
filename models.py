@@ -36,12 +36,16 @@ def _prepare_messages(messages: list[dict], tokenizer: AutoTokenizer) -> list[di
     for msg in messages:
         if msg["role"] == "system":
             pending_system = msg["content"]
-        elif msg["role"] == "user" and pending_system is not None:
-            prepared.append({
-                "role": "user",
-                "content": f"{pending_system}\n\n{msg['content']}",
-            })
-            pending_system = None
+        elif msg["role"] == "user":
+            content = msg["content"]
+            if pending_system is not None:
+                content = f"{pending_system}\n\n{content}"
+                pending_system = None
+            if prepared and prepared[-1]["role"] == "user":
+                # Merge consecutive user turns — Gemma requires strict alternation
+                prepared[-1] = {"role": "user", "content": prepared[-1]["content"] + "\n\n" + content}
+            else:
+                prepared.append({"role": "user", "content": content})
         else:
             prepared.append(msg)
 
