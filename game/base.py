@@ -138,14 +138,14 @@ class BaseGame:
         normalised = "YES" if "YES" in raw.upper() else "NO"
         self.questions.append(question)
         self.answers.append(normalised)
-        self.turn_log.append(("question", question, raw))
+        self.turn_log.append(("question", question, normalised))
 
         self.guesser_messages.append({
             "role": "user",
             "content": (
                 f"Turn {self.turn} result:\n"
                 f"Your question: {question}\n"
-                f"Secret answered: {raw}"
+                f"Secret answered: {normalised}"
             ),
         })
         return normalised
