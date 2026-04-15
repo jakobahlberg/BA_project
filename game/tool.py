@@ -71,7 +71,6 @@ class ToolGame(BaseGame):
         self.hints             = get_hints_for_secret(secret_label)
         self.hints_used        = 0
         self.web_searches_used = 0
-        self.questions_since_tool = 0
         self._hints_pdf_path   = f"hints_{self.secret_label.replace(' ', '_')}_r{round_number}.pdf"
 
         if _PDF_AVAILABLE and self.hints:
@@ -152,7 +151,6 @@ class ToolGame(BaseGame):
 
             if action == "hint":
                 hint_text = self._use_hint()
-                self.questions_since_tool = 0
                 self.guesser_messages.append({
                     "role": "user",
                     "content": (
@@ -164,7 +162,6 @@ class ToolGame(BaseGame):
 
             elif action == "web_search":
                 search_result = self._use_web_search(content or "")
-                self.questions_since_tool = 0
                 self.guesser_messages.append({
                     "role": "user",
                     "content": (
@@ -179,7 +176,6 @@ class ToolGame(BaseGame):
                 answer = self._handle_question(content)
                 print(f"Secret: {answer}")
                 transcript_lines.append(f"Secret: {answer}")
-                self.questions_since_tool += 1
 
             elif action == "guess":
                 correct = self._handle_guess(content)
@@ -194,25 +190,18 @@ class ToolGame(BaseGame):
                     print(won_line)
                     transcript_lines.append(won_line)
                     self.game_over = True
-                else:
-                    self.questions_since_tool += 1
 
             else:
                 answer = self._handle_question(content)
                 print(f"Secret: {answer}")
                 transcript_lines.append(f"Secret: {answer}")
-                self.questions_since_tool += 1
 
             self.turn += 1
 
-            if (
-                not self.game_over
-                and self.questions_since_tool >= 4
-                and (self.hints_used < len(self.hints) or self.web_searches_used < config.MAX_WEB_SEARCHES)
-            ):
+            if not self.game_over:
                 self.guesser_messages.append({
                     "role": "user",
-                    "content": "Reminder: If you are still uncertain, consider USE_HINT or WEB_SEARCH.",
+                    "content": "Reminder: Consider using USE_HINT or WEB_SEARCH.",
                 })
 
         if not self.game_over:

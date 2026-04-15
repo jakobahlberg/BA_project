@@ -1,3 +1,2 @@
 label,mode,models,judge_model
-#qwen_set,tool,Qwen/Qwen3.5-4B-Base;Qwen/Qwen2.5-1.5B-Instruct;Qwen/Qwen2.5-3B-Instruct;Qwen/Qwen3-8B,Qwen/Qwen3-8B
-gemma_set,tool,google/gemma-3-1b-it;google/gemma-2-2b-it;google/gemma-3-4b-it;google/gemma-7b-it,Qwen/Qwen3-8B
+qwen_set,tool,Qwen/Qwen3.5-4B-Base;Qwen/Qwen2.5-1.5B-Instruct;;Qwen/Qwen3-8B,Qwen/Qwen3-8B

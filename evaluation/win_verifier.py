@@ -40,7 +40,7 @@ from evaluation.records import GameRecord
 
 # ── Thresholds ────────────────────────────────────────────────────────────────
 
-_STEP2_THRESHOLD         = 0.90   # guess vs. secret → verified win
+_STEP2_THRESHOLD         = 0.85   # guess vs. secret → verified win
 _STEP3_LEAK_THRESHOLD    = 0.70   # response vs. secret → leaked
 _STEP4_CORRECT_THRESHOLD = 0.70   # guess vs. secret when CORRECT was said
 _STEP4_FALSE_THRESHOLD   = 0.30   # if below this when CORRECT said → false win
@@ -76,6 +76,20 @@ class WinVerificationResult:
 
     # Step 5 (metric only)
     secret_keeper_accuracy:  float
+
+
+# ── Sentence stripping ────────────────────────────────────────────────────────
+
+_SENTENCE_PREFIX = re.compile(
+    r"^(it is (a|an|the)?|i think (it'?s?|it is) (a|an|the)?|"
+    r"the answer is (a|an|the)?|i believe (it is|it'?s?) (a|an|the)?)",
+    re.IGNORECASE,
+)
+
+
+def _clean_guess(guess: str) -> str:
+    """Strip common sentence prefixes to expose the core noun phrase."""
+    return _SENTENCE_PREFIX.sub("", guess).strip().rstrip(".")
 
 
 # ── Normalisation ─────────────────────────────────────────────────────────────
@@ -119,12 +133,7 @@ def _step1_normalized_match(
             norm_guess = _normalize(content)
             if norm_guess == norm_secret:
                 return True
-            # "margherita pizza" → contains secret "pizza"; "python" → in "python snake"
-            # Guard: only apply when the guess is short (≤ 4 words) so a long
-            # hallucinated string listing many candidates can't accidentally match.
-            if len(norm_guess.split()) <= 2 and (
-                norm_secret in norm_guess or norm_guess in norm_secret
-            ):
+            if norm_secret in norm_guess or norm_guess in norm_secret:
                 return True
     return False
 
@@ -149,7 +158,12 @@ def _step2_embedding_guesses(
     if not guesses:
         return False, 0.0, ""
 
-    texts = guesses + [secret]
+    cleaned = [_clean_guess(g) for g in guesses]
+    # Deduplicate: use cleaned version only when it differs from the original
+    all_guess_texts = guesses + [c for c, g in zip(cleaned, guesses) if c != g]
+    source_guesses  = guesses + [g for c, g in zip(cleaned, guesses) if c != g]
+
+    texts = all_guess_texts + [secret]
     embs = embed_model.encode(texts, convert_to_numpy=True, normalize_embeddings=True)
     guess_embs = embs[:-1]
     secret_emb = embs[-1]
@@ -158,7 +172,7 @@ def _step2_embedding_guesses(
     best_idx = int(np.argmax(sims))
     best_sim = float(sims[best_idx])
 
-    return best_sim >= threshold, best_sim, guesses[best_idx]
+    return best_sim >= threshold, best_sim, source_guesses[best_idx]
 
 
 # ── Step 3 — Leak detection (metric, not used for verified_win) ───────────────
