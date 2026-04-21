@@ -23,8 +23,8 @@ export HF_HOME="${HF_HOME:-$HOME/.cache/huggingface}"
 export TRANSFORMERS_CACHE="${TRANSFORMERS_CACHE:-$HF_HOME}"
 
 # ── Configure here ────────────────────────────────────────────────────────────
-MODEL="Qwen/Qwen3.5-4B-Base"
-BITS=8
+MODEL="Qwen/Qwen3.5-4B"
+BITS=2
 OUTPUT="$SLURM_SUBMIT_DIR/quantized_models/$(basename $MODEL)-${BITS}bit"
 # ─────────────────────────────────────────────────────────────────────────────
 
