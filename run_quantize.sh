@@ -24,16 +24,18 @@ export TRANSFORMERS_CACHE="${TRANSFORMERS_CACHE:-$HF_HOME}"
 
 # ── Configure here ────────────────────────────────────────────────────────────
 MODEL="Qwen/Qwen3.5-4B"
-BITS=2
+BITS=8
 OUTPUT="$SLURM_SUBMIT_DIR/quantized_models/$(basename $MODEL)-${BITS}bit"
 # ─────────────────────────────────────────────────────────────────────────────
 
 mkdir -p "$SLURM_SUBMIT_DIR/quantized_models"
 
-python3 "$SLURM_SUBMIT_DIR/quantize_model.py" \
+python3 "$SLURM_SUBMIT_DIR/quantize_model_exclusions.py" \
     --model  "$MODEL" \
     --bits   "$BITS" \
     --output "$OUTPUT"
 
 echo "Quantized model saved to: $OUTPUT"
 echo "Set GUESSER_MODEL = \"$OUTPUT\" in config.py to use it."
+
+#Ratio: 128 quantized / (128 + 250) ≈ 34% of weight-bearing modules quantized, 66% kept in fp16.
