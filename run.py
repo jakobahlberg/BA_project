@@ -74,11 +74,9 @@ def main() -> None:
     # Only game play (guesser + secret keeper) is tracked for carbon.
     # Evaluation / judge runs after epoch_end so it is excluded.
     records = []
-    category_stats = {
-        "animal": {"rounds": 0, "turns": 0, "correct": 0},
-        "food":   {"rounds": 0, "turns": 0, "correct": 0},
-        "object": {"rounds": 0, "turns": 0, "correct": 0},
-    }
+    # Support any category present in word_bank/standard.py
+    # (e.g., drink, city, movie, tool, ...), not just legacy 3-category setup.
+    category_stats = {}
 
     for i, secret in enumerate(SECRETS, start=1):
 
@@ -97,7 +95,10 @@ def main() -> None:
         record = game.play()
         records.append((record, secret))
 
-        stats = category_stats[secret.category]
+        stats = category_stats.setdefault(
+            secret.category,
+            {"rounds": 0, "turns": 0, "correct": 0},
+        )
         stats["rounds"] += 1
         stats["turns"]  += record.turns_used
         if record.was_correct:

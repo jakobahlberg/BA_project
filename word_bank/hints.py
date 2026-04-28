@@ -13,6 +13,7 @@ import json
 from typing import Dict, List
 
 import config
+from word_bank.standard import SECRETS as STANDARD_SECRETS
 
 
 # ─── Handcrafted hints ────────────────────────────────────────────────────────
@@ -96,6 +97,111 @@ def _load_dataset_objects(path: str = "dataset.json") -> Dict[str, Dict]:
 
 
 _DATASET_OBJECTS = _load_dataset_objects()
+_STANDARD_CATEGORIES = {entry.label: entry.category for entry in STANDARD_SECRETS}
+
+
+_CATEGORY_BASE_HINTS: Dict[str, List[str]] = {
+    "animal": [
+        "It is a living creature.",
+        "It belongs to the animal kingdom.",
+        "It is found in nature (wild or domesticated).",
+    ],
+    "food": [
+        "It is not a living creature.",
+        "It is something you can eat.",
+        "It is commonly consumed as part of a meal or snack.",
+    ],
+    "drink": [
+        "It is not a living creature.",
+        "It is something you can drink.",
+        "It is consumed as a beverage.",
+    ],
+    "plant": [
+        "It is a living organism.",
+        "It belongs to the plant kingdom.",
+        "It is associated with nature and growth.",
+    ],
+    "clothing": [
+        "It is not a living creature.",
+        "It is something people wear.",
+        "It is used as part of personal attire.",
+    ],
+    "sport": [
+        "It is not a living creature.",
+        "It is an activity people do.",
+        "It is associated with physical play or competition.",
+    ],
+    "musical instrument": [
+        "It is not a living creature.",
+        "It is related to music.",
+        "It is used to produce sound intentionally.",
+    ],
+    "body part": [
+        "It is associated with a living body.",
+        "It is part of human anatomy.",
+        "It has a biological function.",
+    ],
+    "country": [
+        "It is not a living creature.",
+        "It is a geographical/political place.",
+        "It is a sovereign nation.",
+    ],
+    "city": [
+        "It is not a living creature.",
+        "It is a place people can live in.",
+        "It is an urban location.",
+    ],
+    "vehicle": [
+        "It is not a living creature.",
+        "It is used for transportation.",
+        "It helps move people or goods from one place to another.",
+    ],
+    "video game": [
+        "It is not a living creature.",
+        "It is related to digital entertainment.",
+        "It is something people play.",
+    ],
+    "famous person": [
+        "It is a real human being.",
+        "It is a person known publicly.",
+        "It is associated with history, culture, or achievements.",
+    ],
+    "furniture": [
+        "It is not a living creature.",
+        "It is a household object.",
+        "It is commonly found inside homes or buildings.",
+    ],
+    "kitchenware": [
+        "It is not a living creature.",
+        "It is used in a kitchen.",
+        "It helps with food preparation or cooking.",
+    ],
+    "tool": [
+        "It is not a living creature.",
+        "It is used to perform practical tasks.",
+        "It helps with building, fixing, or shaping things.",
+    ],
+    "school subject": [
+        "It is not a living creature.",
+        "It is related to education.",
+        "It is taught in schools.",
+    ],
+    "architecture": [
+        "It is not a living creature.",
+        "It is a built structure or landmark.",
+        "It is associated with construction/design.",
+    ],
+    "mythical creature": [
+        "It is not a real living creature.",
+        "It appears in myths, legends, or fantasy.",
+        "It is imagined rather than biologically real.",
+    ],
+    "movie": [
+        "It is not a living creature.",
+        "It is a form of storytelling/entertainment.",
+        "It is something people watch.",
+    ],
+}
 
 
 def _hints_from_attributes(obj: Dict) -> List[str]:
@@ -147,6 +253,35 @@ def _hints_from_attributes(obj: Dict) -> List[str]:
     return deduped[:config.MAX_HINTS]
 
 
+# ─── Generic fallbacks for full coverage ─────────────────────────────────────
+
+def _label_shape_hints(secret_label: str) -> List[str]:
+    words = [w for w in secret_label.split() if w]
+    first = words[0][0].upper() if words else "?"
+    hints = [
+        f"It contains {len(words)} word(s).",
+        f"It starts with the letter '{first}'.",
+    ]
+    if "-" in secret_label:
+        hints.append("Its name includes a hyphen.")
+    return hints
+
+
+def _category_fallback_hints(secret_label: str, category: str) -> List[str]:
+    base = _CATEGORY_BASE_HINTS.get(
+        category,
+        [
+            "It is not a living creature.",
+            "It belongs to a recognizable category.",
+            "It has a specific proper name.",
+        ],
+    )
+    hints = list(base) + _label_shape_hints(secret_label)
+    seen: set = set()
+    deduped = [h for h in hints if not (h in seen or seen.add(h))]
+    return deduped[:config.MAX_HINTS]
+
+
 # ─── Public API ───────────────────────────────────────────────────────────────
 
 def get_hints_for_secret(secret_label: str) -> List[str]:
@@ -157,4 +292,18 @@ def get_hints_for_secret(secret_label: str) -> List[str]:
     if secret_label in HINTS_BY_SECRET:
         return HINTS_BY_SECRET[secret_label][:config.MAX_HINTS]
     obj = _DATASET_OBJECTS.get(secret_label)
-    return _hints_from_attributes(obj)
+    category = _STANDARD_CATEGORIES.get(secret_label) or (obj or {}).get("category", "")
+
+    # dataset.json is still from a smaller taxonomy; for new categories, prefer
+    # our category-based hint templates to avoid misleading generic attributes.
+    use_dataset_attrs = category in {"animal", "food", "drink", "plant"} and obj is not None
+
+    if use_dataset_attrs:
+        hints = _hints_from_attributes(obj)
+        if len(hints) < config.MAX_HINTS:
+            hints.extend(_category_fallback_hints(secret_label, category))
+        seen: set = set()
+        deduped = [h for h in hints if not (h in seen or seen.add(h))]
+        return deduped[:config.MAX_HINTS]
+
+    return _category_fallback_hints(secret_label, category)

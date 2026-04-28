@@ -1,2 +1,3 @@
 label,mode,models,judge_model
-qwen_quant,tool,Qwen/Qwen3.5-4B;quantized_models/Qwen3.5-4B-8bit;quantized_models/Qwen3.5-4B-4bit;quantized_models/Qwen3.5-4B-2bit,Qwen/Qwen3-8B
+#qwen_quant,tool,Qwen/Qwen3.5-4B;quantized_models/Qwen3.5-4B-8bit;quantized_models/Qwen3.5-4B-4bit;quantized_models/Qwen3.5-4B-2bit,Qwen/Qwen3-8B
+qwen_main,tool,Qwen/Qwen3-1.7B;Qwen/Qwen3.5-4B;Qwen/Qwen3-8B;Qwen/Qwen3.5-9B,Qwen/Qwen3-8B
