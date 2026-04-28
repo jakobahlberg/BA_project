@@ -10,7 +10,7 @@ def layer1_game_outcome(record: GameRecord) -> Tuple[float, float, float, float]
 
     Scoring:
         win_score:               1.0 if the guesser won, else 0.0
-        efficiency_score:        Tiered score based on turns used (only > 0 if won)
+        efficiency_score:        (max_turns - turns_used) / max_turns (only > 0 if won)
         secret_reliability_score: Fraction of secret responses that were valid
                                   one-word answers (YES/NO/CORRECT/WRONG)
         layer1_score:            Weighted composite (win 50%, efficiency 30%, reliability 20%)
@@ -23,13 +23,9 @@ def layer1_game_outcome(record: GameRecord) -> Tuple[float, float, float, float]
     """
     win_score = 1.0 if record.was_correct else 0.0
 
+    MAX_TURNS = 20
     if record.was_correct:
-        t = record.turns_used
-        if   t <= 5:  efficiency_score = 1.00
-        elif t <= 8:  efficiency_score = 0.85
-        elif t <= 12: efficiency_score = 0.65
-        elif t <= 16: efficiency_score = 0.40
-        else:         efficiency_score = 0.20
+        efficiency_score = (MAX_TURNS - record.turns_used) / MAX_TURNS
     else:
         efficiency_score = 0.0
 
