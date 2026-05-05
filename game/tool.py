@@ -135,7 +135,10 @@ class ToolGame(BaseGame):
     # ── Main loop ────────────────────────────────────────────────────────────
 
     def play(self) -> GameRecord:
-        header = f"\n=== ROUND {self.round_number} START (TOOL MODE) ==="
+        header = (
+            f"\n=== ROUND {self.round_number} START (TOOL MODE) ===\n"
+            f"[INSPECT] Secret target: {self.secret_label}"
+        )
         print(header)
         transcript_lines: list[str] = [header]
 

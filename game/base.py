@@ -214,7 +214,10 @@ class BaseGame:
         Returns:
             GameRecord with all questions, answers, guesses, and metadata.
         """
-        header = f"\n=== ROUND {self.round_number} START ==="
+        header = (
+            f"\n=== ROUND {self.round_number} START ===\n"
+            f"[INSPECT] Secret target: {self.secret_label}"
+        )
         print(header)
         transcript_lines: list[str] = [header]
 
