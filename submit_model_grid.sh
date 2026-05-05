@@ -2,10 +2,10 @@
 set -euo pipefail
 
 # Usage:
-#   bash submit_model_grid.sh [config_csv] [num_runs] [start_seed] [batch_size] [poll_seconds] [tag_prefix] [wrapper_mode]
+#   bash submit_model_grid.sh [config_csv] [num_runs] [start_seed] [batch_size] [poll_seconds] [tag_prefix] [wrapper_mode] [wrapper_time]
 #
 # Example:
-#   bash submit_model_grid.sh model_configs.csv 10 1 2 30 grid serial
+#   bash submit_model_grid.sh model_configs.csv 10 1 2 30 grid serial 24:00:00
 #
 # The script supports two CSV row formats:
 #   1) Explicit configuration row:
@@ -23,6 +23,7 @@ BATCH_SIZE=${4:-2}
 POLL_SECONDS=${5:-30}
 TAG_PREFIX=${6:-grid}
 WRAPPER_MODE=${7:-serial}
+WRAPPER_TIME=${8:-24:00:00}
 
 if [ "${WRAPPER_MODE}" != "serial" ] && [ "${WRAPPER_MODE}" != "parallel" ]; then
   echo "Invalid wrapper_mode: ${WRAPPER_MODE} (use 'serial' or 'parallel')"
@@ -42,6 +43,7 @@ fi
 echo "Submitting model grid from ${CONFIG_CSV}"
 echo "Per config: runs=${NUM_RUNS}, start_seed=${START_SEED}, batch_size=${BATCH_SIZE}, poll_seconds=${POLL_SECONDS}"
 echo "Wrapper mode: ${WRAPPER_MODE}"
+echo "Wrapper time: ${WRAPPER_TIME}"
 
 prev_wrapper_job_id=""
 
@@ -54,6 +56,7 @@ submit_wrapper() {
 
   local -a sbatch_args
   sbatch_args+=(--parsable)
+  sbatch_args+=(--time="${WRAPPER_TIME}")
   if [ "${WRAPPER_MODE}" = "serial" ] && [ -n "${prev_wrapper_job_id}" ]; then
     # Chain wrappers so only one configuration wrapper runs at a time.
     sbatch_args+=(--dependency="afterany:${prev_wrapper_job_id}")

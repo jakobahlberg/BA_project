@@ -54,6 +54,16 @@ detect_models() {
   secret=$(grep "\\[Models\\] Loading:" "$first" 2>/dev/null | sed 's/.*Loading: //' | sed -n '2p')
   judge=$(grep -m1 "\\[Evaluator\\] Loading judge model:" "$first" 2>/dev/null | sed 's/.*judge model: //')
 
+  # In many runs RUN_JUDGE=False, so judge line is absent from logs.
+  # Fall back to config.py JUDGE_MODEL so reruns still work.
+  if [ -z "${judge}" ]; then
+    judge=$(python3 - <<'PY' 2>/dev/null
+import config
+print(getattr(config, "JUDGE_MODEL", "Qwen/Qwen3-8B"))
+PY
+)
+  fi
+
   if [ -z "${guesser}" ] || [ -z "${secret}" ] || [ -z "${judge}" ]; then
     return 1
   fi
@@ -184,4 +194,3 @@ main() {
 }
 
 main
-

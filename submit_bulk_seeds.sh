@@ -1,4 +1,11 @@
 #!/bin/bash
+#SBATCH --job-name=submit_bulk_seeds.sh
+#SBATCH --ntasks=1
+#SBATCH --cpus-per-task=1
+#SBATCH --mem=2G
+#SBATCH --time=24:00:00
+#SBATCH --output=slurm-%j.out
+
 set -euo pipefail
 
 NUM_RUNS=${1:-10}
