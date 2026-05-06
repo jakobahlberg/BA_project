@@ -78,6 +78,18 @@ class ToolGame(BaseGame):
 
     # ── PDF helpers ──────────────────────────────────────────────────────────
 
+    @staticmethod
+    def _safe_pdf_text(text: str) -> str:
+        """Normalize text for core FPDF fonts (latin-1 compatible)."""
+        return (
+            text.replace("’", "'")
+                .replace("‘", "'")
+                .replace("“", '"')
+                .replace("”", '"')
+                .replace("–", "-")
+                .replace("—", "-")
+        )
+
     def _build_hints_pdf(self) -> None:
         pdf = FPDF()
         for i, hint in enumerate(self.hints):
@@ -85,12 +97,12 @@ class ToolGame(BaseGame):
             pdf.set_font("Helvetica", size=16)
             pdf.cell(0, 10, f"Hint {i + 1}:", ln=True)
             pdf.set_font("Helvetica", size=13)
-            pdf.cell(0, 10, hint, ln=True)
+            pdf.cell(0, 10, self._safe_pdf_text(hint), ln=True)
         pdf.output(self._hints_pdf_path)
 
     def _read_hint_from_pdf(self, index: int) -> str:
         doc = fitz.open(self._hints_pdf_path)
-        text = doc[index].get_text().strip()
+        text = self._safe_pdf_text(doc[index].get_text().strip())
         doc.close()
         return text
 
