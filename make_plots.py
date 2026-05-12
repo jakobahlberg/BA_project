@@ -6,7 +6,7 @@ from collections import defaultdict
 import matplotlib.pyplot as plt
 import numpy as np
 
-CSV_PATH = "results/results.csv"
+CSV_PATH = "results/results_qwen_main_2026-05-06_full.csv"
 OUT = "results/plots"
 
 # Broken guesser to exclude from the guesser-side plot (emits 0 tool calls,
@@ -14,8 +14,8 @@ OUT = "results/plots"
 BROKEN_GUESSERS = {"Qwen3.5-2B"}
 
 # Keeper display order (large → small), guesser display order (best → worst raw win%).
-KEEPER_ORDER  = ["Qwen3-8B", "Qwen3.5-4B", "Qwen3.5-2B", "Qwen3-1.7B"]
-GUESSER_ORDER = ["Qwen3-1.7B", "Qwen3.5-4B", "Qwen3-8B"]
+KEEPER_ORDER  = ["Qwen3.5-9B", "Qwen3-8B", "Qwen3.5-4B", "Qwen3-1.7B"]
+GUESSER_ORDER = ["Qwen3-1.7B", "Qwen3.5-4B", "Qwen3-8B", "Qwen3.5-9B"]
 
 
 def short(name: str) -> str:
@@ -70,7 +70,6 @@ plt.rcParams.update({
     "legend.fontsize": 10,
     "figure.dpi": 150,
     "savefig.dpi": 200,
-    "savefig.bbox": "tight",
 })
 
 
@@ -83,7 +82,7 @@ verified = [by_keeper[k]["verified"] for k in keepers]
 fc       = [by_keeper[k]["fc"]       for k in keepers]
 survival = [by_keeper[k]["survival"] for k in keepers]
 
-fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(11, 4.2))
+fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(12, 5.2), constrained_layout=True)
 
 x = np.arange(len(keepers))
 w = 0.38
@@ -125,7 +124,6 @@ ax2.grid(axis="y", linestyle=":", alpha=0.5)
 n_per_keeper = by_keeper[keepers[0]]["n_games"]
 fig.suptitle(f"Keeper effect on scoring ({n_per_keeper} games per keeper)",
              fontsize=13, fontweight="bold")
-plt.tight_layout()
 plt.savefig(f"{OUT}/keeper_honesty.png")
 plt.savefig(f"{OUT}/keeper_honesty.pdf")
 plt.close()
@@ -140,7 +138,7 @@ g_verified = [by_guesser[g]["verified"] for g in guessers]
 g_tools    = [by_guesser[g]["tools"]    for g in guessers]
 g_eff      = [by_guesser[g]["eff"]      for g in guessers]
 
-fig, (axL, axR) = plt.subplots(1, 2, figsize=(11, 4.2))
+fig, (axL, axR) = plt.subplots(1, 2, figsize=(12, 5.2), constrained_layout=True)
 
 x = np.arange(len(guessers))
 w = 0.38
@@ -179,7 +177,6 @@ axR.set_title("Tool usage and efficiency by guesser")
 axR.grid(axis="y", linestyle=":", alpha=0.5)
 
 fig.suptitle("Guesser performance summary", fontsize=13, fontweight="bold")
-plt.tight_layout()
 plt.savefig(f"{OUT}/guesser_summary.png")
 plt.savefig(f"{OUT}/guesser_summary.pdf")
 plt.close()
