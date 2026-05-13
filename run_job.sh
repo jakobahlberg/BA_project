@@ -7,6 +7,7 @@
 #SBATCH --mem=96G
 #SBATCH --time=06:00:00
 #SBATCH --output=slurm-%j.out
+#SBATCH --exclude=hendrixgpu06fl
 
 set -euo pipefail
 
