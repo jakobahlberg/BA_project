@@ -52,6 +52,19 @@ def _prepare_messages(messages: list[dict], tokenizer: AutoTokenizer) -> list[di
     return prepared
 
 
+def _format_plain_chat(messages: list[dict]) -> str:
+    """
+    Fallback chat formatting for base models without tokenizer chat templates.
+    """
+    lines: list[str] = []
+    for msg in messages:
+        role = msg.get("role", "user").upper()
+        content = msg.get("content", "")
+        lines.append(f"{role}: {content}")
+    lines.append("ASSISTANT:")
+    return "\n".join(lines)
+
+
 def load_model(model_name: str) -> tuple:
     """
     Load a causal LM and its tokenizer from HuggingFace.
@@ -96,12 +109,15 @@ def generate_answer(
         Decoded response string (stripped, special tokens removed).
     """
     prepared = _prepare_messages(messages, tokenizer)
-    text = tokenizer.apply_chat_template(
-        prepared,
-        tokenize=False,
-        add_generation_prompt=True,
-        enable_thinking=False,
-    )
+    if getattr(tokenizer, "chat_template", None):
+        text = tokenizer.apply_chat_template(
+            prepared,
+            tokenize=False,
+            add_generation_prompt=True,
+            enable_thinking=False,
+        )
+    else:
+        text = _format_plain_chat(prepared)
 
     inputs = tokenizer([text], return_tensors="pt").to(model.device)
 

@@ -2,13 +2,13 @@
 #SBATCH --job-name=llm_gpu
 #SBATCH --partition=gpu
 #SBATCH --gres=gpu:3
-#SBATCH --exclude=hendrixgpu09fl,hendrixgpu10fl,hendrixgpu17fl,hendrixgpu18fl,hendrixgpu26fl
 #SBATCH --ntasks=1
 #SBATCH --cpus-per-task=8
 #SBATCH --mem=96G
 #SBATCH --time=06:00:00
 #SBATCH --output=slurm-%j.out
 
+set -euo pipefail
 
 module load python/3.12.8
 module load cuda/11.8
@@ -31,7 +31,8 @@ print("CUDA available:", torch.cuda.is_available())
 print("CUDA devices:", torch.cuda.device_count())
 
 if not torch.cuda.is_available() or torch.cuda.device_count() == 0:
-    sys.exit("FATAL: CUDA not usable in this allocation")
+    print("FATAL: CUDA not usable in this allocation", file=sys.stderr)
+    sys.exit(42)
 PY
 
 # Install dependencies once on login node instead of every job to avoid CUDA re-init issues

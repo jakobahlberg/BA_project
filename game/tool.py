@@ -147,6 +147,9 @@ class ToolGame(BaseGame):
     # ── Main loop ────────────────────────────────────────────────────────────
 
     def play(self) -> GameRecord:
+        max_actions_per_round = 35
+        action_count = 0
+        ended_by_action_cap = False
         header = (
             f"\n=== ROUND {self.round_number} START (TOOL MODE) ===\n"
             f"[INSPECT] Secret target: {self.secret_label}"
@@ -155,6 +158,16 @@ class ToolGame(BaseGame):
         transcript_lines: list[str] = [header]
 
         while self.turn < config.MAX_TURNS and not self.game_over:
+            action_count += 1
+            if action_count > max_actions_per_round:
+                guard_line = (
+                    f"Guardrail triggered: exceeded {max_actions_per_round} actions in one round. "
+                    "Round is counted as a loss."
+                )
+                print(guard_line)
+                transcript_lines.append(guard_line)
+                ended_by_action_cap = True
+                break
 
             guesser_output = generate_answer(
                 self.guesser_messages, self.guesser_model, self.guesser_tokenizer
@@ -220,10 +233,17 @@ class ToolGame(BaseGame):
                 })
 
         if not self.game_over:
-            failed_line = (
-                f"Guesser failed after {config.MAX_TURNS} turns "
-                f"using {self.hints_used} hints and {self.web_searches_used} web searches."
-            )
+            if ended_by_action_cap:
+                failed_line = (
+                    f"Guesser lost due to action cap ({max_actions_per_round}) "
+                    f"after {self.turn} turns using {self.hints_used} hints "
+                    f"and {self.web_searches_used} web searches."
+                )
+            else:
+                failed_line = (
+                    f"Guesser failed after {config.MAX_TURNS} turns "
+                    f"using {self.hints_used} hints and {self.web_searches_used} web searches."
+                )
             print(failed_line)
             transcript_lines.append(failed_line)
             if self.guesses:

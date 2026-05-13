@@ -14,6 +14,7 @@ BATCH_SIZE=${3:-2}
 POLL_SECONDS=${4:-30}
 RUN_TAG=${5:-$(date +%F)}
 MAX_RETRY_ROUNDS=${6:-4}
+MAX_CUDA_FAST_RETRIES=${MAX_CUDA_FAST_RETRIES:-2}
 RUN_DIR="runs_${RUN_TAG}"
 BATCH_ID=${SLURM_JOB_ID:-manual-$(date +%s)}
 
@@ -37,6 +38,7 @@ echo "Auto-retry rounds: ${MAX_RETRY_ROUNDS}"
 submitted=0
 current_seed=${START_SEED}
 END_SEED=$((START_SEED + NUM_RUNS - 1))
+declare -A CUDA_FAST_RETRY_COUNT
 
 seed_has_summary() {
   local seed="$1"
@@ -44,6 +46,18 @@ seed_has_summary() {
   for f in "${RUN_DIR}"/slurm-batch*-seed"${seed}"-*.out; do
     [ -f "${f}" ] || continue
     if grep -q "=== EVALUATION SUMMARY" "${f}"; then
+      return 0
+    fi
+  done
+  return 1
+}
+
+seed_has_cuda_fatal() {
+  local seed="$1"
+  local f
+  for f in "${RUN_DIR}"/slurm-batch*-seed"${seed}"-*.out; do
+    [ -f "${f}" ] || continue
+    if grep -q "FATAL: CUDA not usable in this allocation" "${f}"; then
       return 0
     fi
   done
@@ -80,6 +94,7 @@ wait_for_jobs() {
 
 while [ "$submitted" -lt "$NUM_RUNS" ]; do
   batch_job_ids=()
+  batch_seeds=()
 
   for ((i=0; i<BATCH_SIZE && submitted<NUM_RUNS; i++)); do
     seed=${current_seed}
@@ -91,6 +106,7 @@ while [ "$submitted" -lt "$NUM_RUNS" ]; do
 
     echo "Submitted seed=${seed} job_id=${job_id}"
     batch_job_ids+=("${job_id}")
+    batch_seeds+=("${seed}")
     submitted=$((submitted + 1))
     current_seed=$((current_seed + 1))
   done
@@ -98,6 +114,35 @@ while [ "$submitted" -lt "$NUM_RUNS" ]; do
   echo "Waiting for batch to finish: ${batch_job_ids[*]}"
   wait_for_jobs "${batch_job_ids[@]}"
   echo "Batch complete."
+
+  # Fast-path retry for known bad CUDA allocations.
+  for seed in "${batch_seeds[@]}"; do
+    if seed_has_summary "${seed}"; then
+      continue
+    fi
+    if ! seed_has_cuda_fatal "${seed}"; then
+      continue
+    fi
+
+    current_retries=${CUDA_FAST_RETRY_COUNT[${seed}]:-0}
+    if [ "${current_retries}" -ge "${MAX_CUDA_FAST_RETRIES}" ]; then
+      echo "Seed ${seed}: reached MAX_CUDA_FAST_RETRIES=${MAX_CUDA_FAST_RETRIES}; defer to normal retry rounds."
+      continue
+    fi
+
+    next_retry=$((current_retries + 1))
+    CUDA_FAST_RETRY_COUNT[${seed}]="${next_retry}"
+    fast_tag="${BATCH_ID}-cf${next_retry}"
+    fast_job_id=$(sbatch --parsable \
+      --export=ALL,EXPERIMENT_SEED=${seed},BATCH_ID=${fast_tag} \
+      --job-name="llm_seed_${seed}" \
+      --output="${RUN_DIR}/slurm-batch${fast_tag}-seed${seed}-%j.out" \
+      run_job.sh)
+    echo "Seed ${seed}: CUDA failure detected, fast-resubmitted job_id=${fast_job_id} (${next_retry}/${MAX_CUDA_FAST_RETRIES})"
+    echo "Waiting for fast retry job: ${fast_job_id}"
+    wait_for_jobs "${fast_job_id}"
+    echo "Fast retry complete for seed ${seed}."
+  done
 done
 
 for ((round=1; round<=MAX_RETRY_ROUNDS; round++)); do
