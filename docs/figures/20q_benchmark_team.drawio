@@ -1,0 +1,178 @@
+<mxfile host="Electron" modified="2026-05-13T10:00:00.000Z" agent="Claude" version="29.7.9">
+  <diagram name="20Q-Benchmark-Team" id="diag1">
+    <mxGraphModel dx="1500" dy="820" grid="0" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1500" pageHeight="830" math="0" shadow="0">
+      <root>
+        <mxCell id="0" />
+        <mxCell id="1" parent="0" />
+
+        <!-- ============== RESOURCE CONSTRAINTS  (warm amber) ============== -->
+        <mxCell id="rc-frame" value="" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#FEF3C7;strokeColor=#D97706;strokeWidth=2;" vertex="1" parent="1">
+          <mxGeometry x="40" y="20" width="1420" height="120" as="geometry" />
+        </mxCell>
+        <mxCell id="rc-label" value="RESOURCE CONSTRAINTS" style="text;html=1;align=left;verticalAlign=middle;fontSize=13;fontStyle=3;fontColor=#92400E;" vertex="1" parent="1">
+          <mxGeometry x="60" y="26" width="260" height="22" as="geometry" />
+        </mxCell>
+
+        <mxCell id="chip1" value="&lt;b style=&quot;color:#92400E;font-size:15px&quot;&gt;Model size&lt;/b&gt;&lt;br&gt;&lt;span style=&quot;font-size:13px;color:#374151&quot;&gt;Qwen 1.7B · 4B · 8B · 9B&lt;/span&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#FFFFFF;strokeColor=#D97706;strokeWidth=2;align=center;verticalAlign=middle;fontSize=13;" vertex="1" parent="1">
+          <mxGeometry x="65" y="55" width="265" height="75" as="geometry" />
+        </mxCell>
+        <mxCell id="chip2" value="&lt;b style=&quot;color:#92400E;font-size:15px&quot;&gt;Quantization&lt;/b&gt;&lt;br&gt;&lt;span style=&quot;font-size:13px;color:#374151&quot;&gt;fp16 · 8-bit · 4-bit · 2-bit&lt;/span&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#FFFFFF;strokeColor=#D97706;strokeWidth=2;align=center;verticalAlign=middle;fontSize=13;" vertex="1" parent="1">
+          <mxGeometry x="345" y="55" width="265" height="75" as="geometry" />
+        </mxCell>
+        <mxCell id="chip3" value="&lt;b style=&quot;color:#92400E;font-size:15px&quot;&gt;Turn budget&lt;/b&gt;&lt;br&gt;&lt;span style=&quot;font-size:13px;color:#374151&quot;&gt;≤ 20 questions / round&lt;/span&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#FFFFFF;strokeColor=#D97706;strokeWidth=2;align=center;verticalAlign=middle;fontSize=13;" vertex="1" parent="1">
+          <mxGeometry x="625" y="55" width="265" height="75" as="geometry" />
+        </mxCell>
+        <mxCell id="chip4" value="&lt;b style=&quot;color:#92400E;font-size:15px&quot;&gt;Tool budget&lt;/b&gt;&lt;br&gt;&lt;span style=&quot;font-size:13px;color:#374151&quot;&gt;≤ 5 USE_HINT · ≤ 5 WEB_SEARCH&lt;/span&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#FFFFFF;strokeColor=#D97706;strokeWidth=2;align=center;verticalAlign=middle;fontSize=13;" vertex="1" parent="1">
+          <mxGeometry x="905" y="55" width="265" height="75" as="geometry" />
+        </mxCell>
+        <mxCell id="chip5" value="&lt;b style=&quot;color:#92400E;font-size:15px&quot;&gt;⚡ Carbon tracker&lt;/b&gt;&lt;br&gt;&lt;span style=&quot;font-size:13px;color:#374151&quot;&gt;kWh · CO₂ per game&lt;/span&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#FFFFFF;strokeColor=#D97706;strokeWidth=2;align=center;verticalAlign=middle;fontSize=13;" vertex="1" parent="1">
+          <mxGeometry x="1185" y="55" width="265" height="75" as="geometry" />
+        </mxCell>
+
+        <!-- ============== AGENTIC LOOP  (cool blue) ============== -->
+        <mxCell id="loop-frame" value="" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#F0F9FF;strokeColor=#2563EB;strokeWidth=2;dashed=1;dashPattern=8 4;" vertex="1" parent="1">
+          <mxGeometry x="40" y="170" width="1420" height="480" as="geometry" />
+        </mxCell>
+        <mxCell id="loop-label" value="AGENTIC LOOP — orchestrator coordinates sub-agents &amp; tools; repeats until guesser wins or turn = 20" style="text;html=1;align=left;verticalAlign=middle;fontSize=13;fontStyle=3;fontColor=#1E40AF;" vertex="1" parent="1">
+          <mxGeometry x="60" y="178" width="900" height="22" as="geometry" />
+        </mxCell>
+
+        <!-- ============== GUESSER TEAM cluster (light dashed outline) ============== -->
+        <mxCell id="team-frame" value="" style="rounded=1;whiteSpace=wrap;html=1;fillColor=none;strokeColor=#3B82F6;strokeWidth=1;dashed=1;dashPattern=4 4;" vertex="1" parent="1">
+          <mxGeometry x="70" y="210" width="780" height="320" as="geometry" />
+        </mxCell>
+        <mxCell id="team-label" value="GUESSER TEAM" style="text;html=1;align=left;verticalAlign=middle;fontSize=12;fontStyle=3;fontColor=#1E40AF;" vertex="1" parent="1">
+          <mxGeometry x="84" y="214" width="200" height="20" as="geometry" />
+        </mxCell>
+
+        <!-- Sub-agents (lighter blue, with hexagonal-ish styling) -->
+        <mxCell id="analyst" value="&lt;b style=&quot;font-size:15px;color:#0C4A6E&quot;&gt;ANALYST sub-agent&lt;/b&gt;&lt;br&gt;&lt;span style=&quot;font-size:11px;color:#475569;font-style:italic&quot;&gt;agent-as-tool · does not consume a turn&lt;/span&gt;&lt;hr style=&quot;border:none;border-top:1px solid #7DD3FC;margin:6px 0&quot;&gt;&lt;div style=&quot;text-align:left;font-size:12.5px;line-height:1.55;color:#0F172A&quot;&gt;• reads transcript so far&lt;br&gt;• summarises evidence&lt;br&gt;• narrows candidate set&lt;br&gt;• suggests next info-gain split&lt;/div&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#E0F2FE;strokeColor=#0284C7;strokeWidth=2;align=center;verticalAlign=top;fontSize=13;spacing=10;" vertex="1" parent="1">
+          <mxGeometry x="100" y="240" width="335" height="130" as="geometry" />
+        </mxCell>
+
+        <mxCell id="researcher" value="&lt;b style=&quot;font-size:15px;color:#0C4A6E&quot;&gt;RESEARCHER sub-agent&lt;/b&gt;&lt;br&gt;&lt;span style=&quot;font-size:11px;color:#475569;font-style:italic&quot;&gt;agent-as-tool · does not consume a turn&lt;/span&gt;&lt;hr style=&quot;border:none;border-top:1px solid #7DD3FC;margin:6px 0&quot;&gt;&lt;div style=&quot;text-align:left;font-size:12.5px;line-height:1.55;color:#0F172A&quot;&gt;• searches public 20-Q transcripts&lt;br&gt;• extracts common strategies&lt;br&gt;• reports frequent secret words&lt;br&gt;• proposes high-yield questions&lt;/div&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#E0F2FE;strokeColor=#0284C7;strokeWidth=2;align=center;verticalAlign=top;fontSize=13;spacing=10;" vertex="1" parent="1">
+          <mxGeometry x="485" y="240" width="335" height="130" as="geometry" />
+        </mxCell>
+
+        <!-- Orchestrator (the guesser brain) -->
+        <mxCell id="orchestrator" value="&lt;b style=&quot;font-size:18px;color:#1E3A8A&quot;&gt;ORCHESTRATOR  (Guesser)&lt;/b&gt;&lt;br&gt;&lt;span style=&quot;color:#475569;font-size:13px&quot;&gt;size × bit-width&lt;/span&gt;&lt;hr style=&quot;border:none;border-top:1px solid #93C5FD;margin:8px 0&quot;&gt;&lt;div style=&quot;text-align:left;font-size:13.5px;line-height:1.6;color:#0F172A&quot;&gt;each turn, picks ONE action:&lt;br&gt;&amp;nbsp;&amp;nbsp;• &lt;tt&gt;CALL ANALYST(prompt)&lt;/tt&gt; &amp;nbsp;&amp;nbsp;&lt;span style=&quot;color:#64748B;font-style:italic&quot;&gt;agent-as-tool&lt;/span&gt;&lt;br&gt;&amp;nbsp;&amp;nbsp;• &lt;tt&gt;CALL RESEARCHER(prompt)&lt;/tt&gt; &amp;nbsp;&lt;span style=&quot;color:#64748B;font-style:italic&quot;&gt;agent-as-tool&lt;/span&gt;&lt;br&gt;&amp;nbsp;&amp;nbsp;• &lt;tt&gt;USE_HINT&lt;/tt&gt; &amp;nbsp;/&amp;nbsp; &lt;tt&gt;WEB_SEARCH:⟨q⟩&lt;/tt&gt;&lt;br&gt;&amp;nbsp;&amp;nbsp;• &lt;tt&gt;QUESTION:&lt;/tt&gt; &lt;i&gt;yes/no question&lt;/i&gt; &amp;nbsp;&lt;span style=&quot;color:#1E3A8A;font-weight:600&quot;&gt;→ keeper&lt;/span&gt;&lt;br&gt;&amp;nbsp;&amp;nbsp;• &lt;tt&gt;GUESS:&lt;/tt&gt; &lt;i&gt;specific name&lt;/i&gt; &amp;nbsp;&lt;span style=&quot;color:#1E3A8A;font-weight:600&quot;&gt;→ keeper&lt;/span&gt;&lt;/div&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#BFDBFE;strokeColor=#1D4ED8;strokeWidth=2.5;align=center;verticalAlign=top;fontSize=13;spacing=12;" vertex="1" parent="1">
+          <mxGeometry x="160" y="385" width="600" height="135" as="geometry" />
+        </mxCell>
+
+        <!-- Secret keeper (same as original) -->
+        <mxCell id="secret" value="&lt;b style=&quot;font-size:18px;color:#3730A3&quot;&gt;SECRET KEEPER LLM&lt;/b&gt;&lt;br&gt;&lt;span style=&quot;color:#475569;font-size:13px&quot;&gt;system prompt holds the secret&lt;/span&gt;&lt;hr style=&quot;border:none;border-top:1px solid #A5B4FC;margin:8px 0&quot;&gt;&lt;div style=&quot;text-align:left;font-size:13.5px;line-height:1.6;color:#0F172A&quot;&gt;one-word reply:&lt;br&gt;• &lt;tt&gt;YES&lt;/tt&gt; / &lt;tt&gt;NO&lt;/tt&gt;  (to a question)&lt;br&gt;• &lt;tt&gt;CORRECT&lt;/tt&gt; / &lt;tt&gt;WRONG&lt;/tt&gt;  (to a guess)&lt;/div&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#C7D2FE;strokeColor=#4338CA;strokeWidth=2.5;align=center;verticalAlign=top;fontSize=13;spacing=12;" vertex="1" parent="1">
+          <mxGeometry x="1000" y="385" width="395" height="135" as="geometry" />
+        </mxCell>
+
+        <!-- Tool branch (USE_HINT, WEB_SEARCH) -->
+        <mxCell id="tool-header" value="tool actions — do NOT consume a turn" style="text;html=1;align=center;verticalAlign=middle;fontSize=12;fontStyle=2;fontColor=#475569;" vertex="1" parent="1">
+          <mxGeometry x="240" y="540" width="440" height="20" as="geometry" />
+        </mxCell>
+        <mxCell id="hint" value="&lt;b style=&quot;color:#334155&quot;&gt;USE_HINT&lt;/b&gt; → next pre-built hint  &lt;span style=&quot;color:#64748B&quot;&gt;(≤ 5)&lt;/span&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#F1F5F9;strokeColor=#64748B;strokeWidth=1;align=center;verticalAlign=middle;fontSize=13;" vertex="1" parent="1">
+          <mxGeometry x="190" y="562" width="280" height="42" as="geometry" />
+        </mxCell>
+        <mxCell id="web" value="&lt;b style=&quot;color:#334155&quot;&gt;WEB_SEARCH:&lt;/b&gt; ⟨q⟩ → DuckDuckGo snippet  &lt;span style=&quot;color:#64748B&quot;&gt;(≤ 5)&lt;/span&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#F1F5F9;strokeColor=#64748B;strokeWidth=1;align=center;verticalAlign=middle;fontSize=13;" vertex="1" parent="1">
+          <mxGeometry x="490" y="562" width="320" height="42" as="geometry" />
+        </mxCell>
+
+        <!-- Iteration hint -->
+        <mxCell id="loop-iter" value="↻ next turn" style="text;html=1;align=center;fontSize=13;fontStyle=2;fontColor=#1E40AF;labelBackgroundColor=#F0F9FF;" vertex="1" parent="1">
+          <mxGeometry x="1140" y="572" width="110" height="20" as="geometry" />
+        </mxCell>
+
+        <!-- ============== EVALUATION  (cool emerald) ============== -->
+        <mxCell id="eval-frame" value="" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ECFDF5;strokeColor=#059669;strokeWidth=2;" vertex="1" parent="1">
+          <mxGeometry x="40" y="680" width="1420" height="140" as="geometry" />
+        </mxCell>
+        <mxCell id="eval-label" value="POST-GAME EVALUATION  (excluded from carbon clock)" style="text;html=1;align=left;verticalAlign=middle;fontSize=13;fontStyle=3;fontColor=#047857;" vertex="1" parent="1">
+          <mxGeometry x="60" y="687" width="500" height="22" as="geometry" />
+        </mxCell>
+
+        <mxCell id="l1" value="&lt;b style=&quot;font-size:16px;color:#047857&quot;&gt;Layer 1 — Game outcome&lt;/b&gt;&lt;br&gt;&lt;br&gt;&lt;span style=&quot;font-size:13px;color:#374151;line-height:1.5&quot;&gt;Did the guesser identify the secret, and how efficiently?&lt;/span&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#FFFFFF;strokeColor=#059669;strokeWidth=2;align=center;verticalAlign=middle;fontSize=14;spacing=10;" vertex="1" parent="1">
+          <mxGeometry x="80" y="720" width="430" height="92" as="geometry" />
+        </mxCell>
+        <mxCell id="l2" value="&lt;b style=&quot;font-size:16px;color:#047857&quot;&gt;Layer 2 — Question quality&lt;/b&gt;&lt;br&gt;&lt;br&gt;&lt;span style=&quot;font-size:13px;color:#374151;line-height:1.5&quot;&gt;How well-targeted are the guesser's questions?&lt;/span&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#FFFFFF;strokeColor=#059669;strokeWidth=2;align=center;verticalAlign=middle;fontSize=14;spacing=10;" vertex="1" parent="1">
+          <mxGeometry x="535" y="720" width="430" height="92" as="geometry" />
+        </mxCell>
+        <mxCell id="l3" value="&lt;b style=&quot;font-size:16px;color:#047857&quot;&gt;Layer 3 — Win verifier&lt;/b&gt;&lt;br&gt;&lt;br&gt;&lt;span style=&quot;font-size:13px;color:#374151;line-height:1.5&quot;&gt;Independent embedding-based check that the final guess truly matches the secret.&lt;/span&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#FFFFFF;strokeColor=#059669;strokeWidth=2;align=center;verticalAlign=middle;fontSize=14;spacing=10;" vertex="1" parent="1">
+          <mxGeometry x="990" y="720" width="430" height="92" as="geometry" />
+        </mxCell>
+
+        <!-- ============== EDGES ============== -->
+
+        <!-- Constraints → Loop -->
+        <mxCell id="rc-to-loop" style="endArrow=classic;html=1;rounded=0;strokeColor=#92400E;strokeWidth=2;exitX=0.5;exitY=1;exitDx=0;exitDy=0;entryX=0.5;entryY=0;entryDx=0;entryDy=0;" edge="1" parent="1" source="rc-frame" target="loop-frame">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="rc-to-loop-label" value="configure agents" style="text;html=1;align=center;fontSize=12;fontStyle=2;fontColor=#92400E;labelBackgroundColor=#FFFFFF;" vertex="1" parent="1">
+          <mxGeometry x="685" y="146" width="130" height="20" as="geometry" />
+        </mxCell>
+
+        <!-- Orchestrator ↔ Analyst -->
+        <mxCell id="o2a" style="endArrow=classic;html=1;strokeColor=#0369A1;strokeWidth=2;rounded=0;exitX=0.25;exitY=0;exitDx=0;exitDy=0;entryX=0.5;entryY=1;entryDx=0;entryDy=0;" edge="1" parent="1" source="orchestrator" target="analyst">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="o2a-label" value="dispatch ⟨prompt⟩" style="text;html=1;align=center;fontSize=12;fontStyle=1;fontColor=#0369A1;labelBackgroundColor=#F0F9FF;" vertex="1" parent="1">
+          <mxGeometry x="170" y="370" width="130" height="18" as="geometry" />
+        </mxCell>
+
+        <mxCell id="a2o" style="endArrow=classic;html=1;strokeColor=#0369A1;strokeWidth=2;rounded=0;exitX=0.7;exitY=1;exitDx=0;exitDy=0;entryX=0.4;entryY=0;entryDx=0;entryDy=0;" edge="1" parent="1" source="analyst" target="orchestrator">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="a2o-label" value="summary / belief" style="text;html=1;align=center;fontSize=12;fontStyle=1;fontColor=#0369A1;labelBackgroundColor=#F0F9FF;" vertex="1" parent="1">
+          <mxGeometry x="335" y="370" width="130" height="18" as="geometry" />
+        </mxCell>
+
+        <!-- Orchestrator ↔ Researcher -->
+        <mxCell id="o2r" style="endArrow=classic;html=1;strokeColor=#0369A1;strokeWidth=2;rounded=0;exitX=0.75;exitY=0;exitDx=0;exitDy=0;entryX=0.5;entryY=1;entryDx=0;entryDy=0;" edge="1" parent="1" source="orchestrator" target="researcher">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="o2r-label" value="dispatch ⟨prompt⟩" style="text;html=1;align=center;fontSize=12;fontStyle=1;fontColor=#0369A1;labelBackgroundColor=#F0F9FF;" vertex="1" parent="1">
+          <mxGeometry x="555" y="370" width="130" height="18" as="geometry" />
+        </mxCell>
+
+        <mxCell id="r2o" style="endArrow=classic;html=1;strokeColor=#0369A1;strokeWidth=2;rounded=0;exitX=0.3;exitY=1;exitDx=0;exitDy=0;entryX=0.95;entryY=0;entryDx=0;entryDy=0;" edge="1" parent="1" source="researcher" target="orchestrator">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="r2o-label" value="findings" style="text;html=1;align=center;fontSize=12;fontStyle=1;fontColor=#0369A1;labelBackgroundColor=#F0F9FF;" vertex="1" parent="1">
+          <mxGeometry x="720" y="370" width="90" height="18" as="geometry" />
+        </mxCell>
+
+        <!-- Orchestrator ↔ Secret Keeper -->
+        <mxCell id="o2s" style="endArrow=classic;html=1;strokeColor=#1E3A8A;strokeWidth=2.5;rounded=0;exitX=1;exitY=0.3;exitDx=0;exitDy=0;entryX=0;entryY=0.3;entryDx=0;entryDy=0;" edge="1" parent="1" source="orchestrator" target="secret">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="o2s-label" value="QUESTION  /  GUESS" style="text;html=1;align=center;fontSize=13;fontStyle=1;fontColor=#1E3A8A;labelBackgroundColor=#F0F9FF;" vertex="1" parent="1">
+          <mxGeometry x="770" y="408" width="220" height="22" as="geometry" />
+        </mxCell>
+
+        <mxCell id="s2o" style="endArrow=classic;html=1;strokeColor=#3730A3;strokeWidth=2.5;rounded=0;exitX=0;exitY=0.7;exitDx=0;exitDy=0;entryX=1;entryY=0.7;entryDx=0;entryDy=0;" edge="1" parent="1" source="secret" target="orchestrator">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="s2o-label" value="YES / NO  |  CORRECT / WRONG" style="text;html=1;align=center;fontSize=13;fontStyle=1;fontColor=#3730A3;labelBackgroundColor=#F0F9FF;" vertex="1" parent="1">
+          <mxGeometry x="755" y="478" width="280" height="22" as="geometry" />
+        </mxCell>
+
+        <!-- Orchestrator → tools (dashed branch) -->
+        <mxCell id="o2tool" style="endArrow=classic;html=1;strokeColor=#64748B;strokeWidth=1.5;rounded=1;dashed=1;exitX=0.4;exitY=1;exitDx=0;exitDy=0;" edge="1" parent="1" source="orchestrator">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="330" y="583" as="targetPoint" />
+            <Array as="points">
+              <mxPoint x="400" y="540" />
+              <mxPoint x="330" y="540" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+
+        <!-- Loop → Eval -->
+        <mxCell id="loop2eval" style="endArrow=classic;html=1;strokeColor=#047857;strokeWidth=2;rounded=0;exitX=0.5;exitY=1;exitDx=0;exitDy=0;entryX=0.5;entryY=0;entryDx=0;entryDy=0;" edge="1" parent="1" source="loop-frame" target="eval-frame">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="loop2eval-label" value="GameRecord  (transcript · turns · sub-agent calls · tool counts)" style="text;html=1;align=center;fontSize=12;fontStyle=2;fontColor=#047857;labelBackgroundColor=#FFFFFF;" vertex="1" parent="1">
+          <mxGeometry x="525" y="656" width="450" height="20" as="geometry" />
+        </mxCell>
+
+      </root>
+    </mxGraphModel>
+  </diagram>
+</mxfile>

@@ -17,9 +17,28 @@ import os
 import random
 
 import torch
+from carbontracker import parser
 from carbontracker.tracker import CarbonTracker
 
 import config
+
+
+def _read_carbon_log(log_dir: str) -> tuple[float, float]:
+    """Parse the latest carbontracker log in `log_dir` and return (kWh, gCO2eq).
+
+    Returns (0.0, 0.0) if no valid log is found.
+    """
+    try:
+        logs = parser.parse_all_logs(log_dir=log_dir)
+    except Exception:
+        return 0.0, 0.0
+    if not logs:
+        return 0.0, 0.0
+    actual = logs[-1].get("actual") or {}
+    return (
+        float(actual.get("energy (kWh)") or 0.0),
+        float(actual.get("co2eq (g)") or 0.0),
+    )
 
 
 def _seed_everything(seed: int) -> None:
@@ -60,25 +79,31 @@ def main() -> None:
         load_judge_model(config.JUDGE_MODEL)
 
     # ── Carbon tracking ──────────────────────────────────────────────────────
+    # One tracker per game so we get clean per-game energy/CO2 numbers.
+    # Only guesser generate_answer calls + tool actions are bracketed by
+    # epoch_start/epoch_end — secret keeper turns and evaluation are excluded.
+    # Offline mode: no API keys → carbontracker falls back to the DK national
+    # average carbon intensity (no live measurement needed).
     os.makedirs(config.CARBON_LOG_DIR, exist_ok=True)
-    # Each epoch = one guesser generate_answer call.
-    # Upper bound: all secrets * max turns (actual calls will be fewer).
-    tracker = CarbonTracker(
-        epochs=len(SECRETS) * config.MAX_TURNS,
-        monitor_epochs=True,
-        log_dir=config.CARBON_LOG_DIR,
-        verbose=2,
-    )
 
-    # ── Run rounds ───────────────────────────────────────────────────────────
-    # Only game play (guesser + secret keeper) is tracked for carbon.
-    # Evaluation / judge runs after epoch_end so it is excluded.
     records = []
-    # Support any category present in word_bank/standard.py
-    # (e.g., drink, city, movie, tool, ...), not just legacy 3-category setup.
     category_stats = {}
+    per_game_carbon: list[dict] = []
 
     for i, secret in enumerate(SECRETS, start=1):
+        game_log_dir = os.path.join(config.CARBON_LOG_DIR, f"game_{i:03d}")
+        os.makedirs(game_log_dir, exist_ok=True)
+        tracker = CarbonTracker(
+            # Upper bound on epochs (guesser + tool actions). Must match the
+            # game's per-round action cap so CarbonTracker doesn't auto-finalize
+            # mid-game when a long failure round exceeds MAX_TURNS+tool budgets.
+            epochs=config.MAX_ACTIONS_PER_ROUND,
+            epochs_before_pred=0,   # disable prediction (we want actuals only)
+            monitor_epochs=-1,      # monitor every epoch
+            update_interval=1,      # sample every second (turns are short)
+            log_dir=game_log_dir,
+            verbose=1,
+        )
 
         game = GameClass(
             secret_prompt=secret.system_prompt,
@@ -93,6 +118,21 @@ def main() -> None:
         )
 
         record = game.play()
+        tracker.stop()
+
+        # Parse this game's carbon log to extract actual energy / CO2.
+        game_kwh, game_co2 = _read_carbon_log(game_log_dir)
+        per_game_carbon.append({
+            "round": i,
+            "secret": secret.label,
+            "energy_kwh": game_kwh,
+            "co2_g": game_co2,
+        })
+        print(
+            f"[CARBON] Round {i} ({secret.label}): "
+            f"{game_kwh:.6f} kWh, {game_co2:.4f} g CO2eq"
+        )
+
         records.append((record, secret))
 
         stats = category_stats.setdefault(
@@ -103,8 +143,6 @@ def main() -> None:
         stats["turns"]  += record.turns_used
         if record.was_correct:
             stats["correct"] += 1
-
-    tracker.stop()
 
     # ── Evaluate (judge excluded from carbon tracking) ────────────────────────
     eval_results = []
@@ -137,6 +175,26 @@ def main() -> None:
             print(f"  Rounds  : {stats['rounds']}")
             print(f"  Correct : {stats['correct']}")
             print(f"  Avg turns: {stats['turns'] / stats['rounds']:.2f}")
+
+    # ── Carbon summary (guesser + tool calls only) ───────────────────────────
+    total_kwh = sum(g["energy_kwh"] for g in per_game_carbon)
+    total_co2 = sum(g["co2_g"]      for g in per_game_carbon)
+    n_games   = max(len(per_game_carbon), 1)
+    print("\n=== CARBON SUMMARY ===")
+    print(f"  Scope            : guesser + tool calls (secret keeper excluded)")
+    print(f"  Games measured   : {len(per_game_carbon)}")
+    # Format matches the regexes in gather_results.py (Actual consumption / Energy / CO2eq).
+    print("Actual consumption:")
+    print(f"  Energy: {total_kwh:.12f} kWh")
+    print(f"  CO2eq:  {total_co2:.12f} g")
+    print(f"  Energy per game  : {total_kwh / n_games * 1000:.4f} Wh")
+    print(f"  CO2eq per game   : {total_co2 / n_games:.4f} g")
+    print("  Per-game breakdown:")
+    for g in per_game_carbon:
+        print(
+            f"    Round {g['round']:>3} | {g['secret']:<30} | "
+            f"{g['energy_kwh']:.6f} kWh | {g['co2_g']:.4f} g CO2eq"
+        )
 
     print("\n=== EVALUATION SUMMARY (all rounds) ===")
     summary = summarise_results(eval_results)

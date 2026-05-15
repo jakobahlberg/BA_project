@@ -26,6 +26,7 @@ JUDGE_MODEL   = os.environ.get("JUDGE_MODEL", "Qwen/Qwen3-8B")
 MAX_TURNS = 20
 MAX_HINTS = 5   # only used in tool mode
 MAX_WEB_SEARCHES = 5   # only used in tool mode
+MAX_ACTIONS_PER_ROUND = 35   # hard ceiling on guesser actions per round (tool mode); also the CarbonTracker epoch budget
 
 # ─── Evaluation ─────────────────────────────────────────────────────────────
 RUN_JUDGE    = False

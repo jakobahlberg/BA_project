@@ -147,7 +147,7 @@ class ToolGame(BaseGame):
     # ── Main loop ────────────────────────────────────────────────────────────
 
     def play(self) -> GameRecord:
-        max_actions_per_round = 35
+        max_actions_per_round = config.MAX_ACTIONS_PER_ROUND
         action_count = 0
         ended_by_action_cap = False
         header = (
@@ -169,6 +169,9 @@ class ToolGame(BaseGame):
                 ended_by_action_cap = True
                 break
 
+            # Bracket guesser + tool execution as one epoch (secret keeper excluded).
+            if self.tracker:
+                self.tracker.epoch_start()
             guesser_output = generate_answer(
                 self.guesser_messages, self.guesser_model, self.guesser_tokenizer
             )
@@ -179,6 +182,8 @@ class ToolGame(BaseGame):
 
             if action == "hint":
                 hint_text = self._use_hint()
+                if self.tracker:
+                    self.tracker.epoch_end()
                 self.guesser_messages.append({
                     "role": "user",
                     "content": (
@@ -190,6 +195,8 @@ class ToolGame(BaseGame):
 
             elif action == "web_search":
                 search_result = self._use_web_search(content or "")
+                if self.tracker:
+                    self.tracker.epoch_end()
                 self.guesser_messages.append({
                     "role": "user",
                     "content": (
@@ -200,7 +207,11 @@ class ToolGame(BaseGame):
                 })
                 continue  # does NOT increment turn
 
-            elif action == "question":
+            # End epoch BEFORE secret-keeper handling so it isn't measured.
+            if self.tracker:
+                self.tracker.epoch_end()
+
+            if action == "question":
                 answer = self._handle_question(content)
                 print(f"Secret: {answer}")
                 transcript_lines.append(f"Secret: {answer}")

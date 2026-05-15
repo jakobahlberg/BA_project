@@ -46,8 +46,16 @@ def parse_out(path: str) -> Optional[dict]:
         m = re.search(pattern, text, flags)
         return cast(m.group(1).strip()) if m else None
 
-    energy_kwh = get(r"Actual consumption.*?Energy:\s*([\d.]+)\s*kWh", float, re.DOTALL)
-    co2_g      = get(r"Actual consumption.*?CO2eq:\s*([\d.]+)\s*g",    float, re.DOTALL)
+    # Anchor on the run.py CARBON SUMMARY block (totals across all games),
+    # not the per-game carbontracker outputs that print "Actual consumption"
+    # once per game.
+    energy_kwh = get(r"=== CARBON SUMMARY ===.*?Energy:\s*([\d.]+)\s*kWh", float, re.DOTALL)
+    co2_g      = get(r"=== CARBON SUMMARY ===.*?CO2eq:\s*([\d.]+)\s*g",    float, re.DOTALL)
+    # Fallback for older runs (single global tracker, only one "Actual consumption" block).
+    if energy_kwh is None:
+        energy_kwh = get(r"Actual consumption.*?Energy:\s*([\d.]+)\s*kWh", float, re.DOTALL)
+    if co2_g is None:
+        co2_g = get(r"Actual consumption.*?CO2eq:\s*([\d.]+)\s*g", float, re.DOTALL)
     num_games  = get(r"num_games\s*:\s*(\d+)", int)
 
     seed = get(r"experiment_seed:\s*(\d+)", int)
