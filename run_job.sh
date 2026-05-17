@@ -7,7 +7,7 @@
 #SBATCH --mem=96G
 #SBATCH --time=06:00:00
 #SBATCH --output=slurm-%j.out
-#SBATCH --exclude=hendrixgpu03fl,hendrixgpu04fl,hendrixgpu06fl,hendrixgpu07fl,hendrixgpu09fl,hendrixgpu10fl,hendrixgpu12fl,hendrixgpu17fl,hendrixgpu18fl,hendrixgpu26fl
+#SBATCH --exclude=hendrixgpu01fl,hendrixfut01fl,hendrixgpu03fl,hendrixgpu04fl,hendrixgpu06fl,hendrixgpu07fl,hendrixgpu09fl,hendrixgpu10fl,hendrixgpu12fl,hendrixgpu17fl,hendrixgpu20fl,hendrixgpu22fl,hendrixgpu26fl
 
 set -euo pipefail
 
