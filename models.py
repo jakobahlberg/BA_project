@@ -19,6 +19,10 @@ def _is_gemma(tokenizer: AutoTokenizer) -> bool:
     return "gemma" in tokenizer.name_or_path.lower()
 
 
+def _is_llama_model_name(model_name: str) -> bool:
+    return "llama" in model_name.lower()
+
+
 def _prepare_messages(messages: list[dict], tokenizer: AutoTokenizer) -> list[dict]:
     """
     Normalize a chat message list for models that don't support a system role.
@@ -77,11 +81,22 @@ def load_model(model_name: str) -> tuple:
     """
     print(f"[Models] Loading: {model_name}")
     tokenizer = AutoTokenizer.from_pretrained(model_name)
-    model = AutoModelForCausalLM.from_pretrained(
-        model_name,
-        device_map="auto",
-        torch_dtype=torch.float16,
-    )
+    model_kwargs = {
+        "device_map": "auto",
+        "dtype": torch.float16,
+    }
+    # Mixed GPU fleets can trigger CUDA kernel-image errors with certain fast attention paths.
+    # For Llama-family models, prefer eager attention for broader compatibility.
+    if _is_llama_model_name(model_name):
+        model_kwargs["attn_implementation"] = "eager"
+
+    try:
+        model = AutoModelForCausalLM.from_pretrained(model_name, **model_kwargs)
+    except TypeError:
+        # Backward-compatible fallback if a transformers version does not accept
+        # one of the optional kwargs (e.g., attn_implementation).
+        model_kwargs.pop("attn_implementation", None)
+        model = AutoModelForCausalLM.from_pretrained(model_name, **model_kwargs)
     print(f"[Models] Loaded: {model_name}")
     return model, tokenizer
 

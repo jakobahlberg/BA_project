@@ -17,6 +17,8 @@ MAX_RETRY_ROUNDS=${6:-4}
 MAX_CUDA_FAST_RETRIES=${MAX_CUDA_FAST_RETRIES:-2}
 RUN_DIR="runs_${RUN_TAG}"
 BATCH_ID=${SLURM_JOB_ID:-manual-$(date +%s)}
+BASE_EXCLUDE_NODES=${BASE_EXCLUDE_NODES:-hendrixgpu01fl,hendrixfut01fl,hendrixgpu03fl,hendrixgpu04fl,hendrixgpu06fl,hendrixgpu07fl,hendrixgpu09fl,hendrixgpu10fl,hendrixgpu12fl,hendrixgpu13fl,hendrixgpu17fl,hendrixgpu18fl,hendrixgpu20fl,hendrixgpu22fl,hendrixgpu23fl,hendrixgpu26fl}
+BAD_NODE_FILE="${RUN_DIR}/bad_nodes_runtime.txt"
 
 if ! command -v sbatch >/dev/null 2>&1; then
   echo "sbatch not found. Run this on the cluster login node."
@@ -29,6 +31,7 @@ if ! command -v squeue >/dev/null 2>&1; then
 fi
 
 mkdir -p "${RUN_DIR}"
+: > "${BAD_NODE_FILE}"
 
 echo "Submitting ${NUM_RUNS} runs from seed ${START_SEED} in batches of ${BATCH_SIZE}."
 echo "Output directory: ${RUN_DIR}/"
@@ -39,6 +42,66 @@ submitted=0
 current_seed=${START_SEED}
 END_SEED=$((START_SEED + NUM_RUNS - 1))
 declare -A CUDA_FAST_RETRY_COUNT
+declare -A BAD_NODE_SET
+
+is_cuda_fatal_file() {
+  local file="$1"
+  [ -f "${file}" ] || return 1
+  grep -Eq "FATAL: CUDA not usable|no kernel image is available for execution on the device|CUDA initialization: CUDA unknown error" "${file}"
+}
+
+current_exclude_list() {
+  local dynamic=""
+  if [ -s "${BAD_NODE_FILE}" ]; then
+    dynamic=$(sort -u "${BAD_NODE_FILE}" | paste -sd',' -)
+  fi
+
+  if [ -n "${BASE_EXCLUDE_NODES}" ] && [ -n "${dynamic}" ]; then
+    echo "${BASE_EXCLUDE_NODES},${dynamic}"
+  elif [ -n "${BASE_EXCLUDE_NODES}" ]; then
+    echo "${BASE_EXCLUDE_NODES}"
+  else
+    echo "${dynamic}"
+  fi
+}
+
+record_bad_node_for_job() {
+  local job_id="$1"
+  local node=""
+  node=$(sacct -j "${job_id}" --format=NodeList%40 -n -P 2>/dev/null | head -1 | tr -d ' ')
+  if [ -z "${node}" ] || [ "${node}" = "Noneassigned" ] || [ "${node}" = "None" ]; then
+    return 0
+  fi
+  if [ -n "${BAD_NODE_SET[${node}]:-}" ]; then
+    return 0
+  fi
+  BAD_NODE_SET["${node}"]=1
+  echo "${node}" >> "${BAD_NODE_FILE}"
+  echo "Added runtime bad node to exclude list: ${node}"
+}
+
+submit_seed_job() {
+  local seed="$1"
+  local run_batch_tag="$2"
+  local output_path="${RUN_DIR}/slurm-batch${run_batch_tag}-seed${seed}-%j.out"
+  local exclude_nodes
+  exclude_nodes=$(current_exclude_list)
+
+  local -a sbatch_args
+  sbatch_args+=(--parsable)
+  sbatch_args+=(--export=ALL,EXPERIMENT_SEED=${seed},BATCH_ID=${run_batch_tag})
+  sbatch_args+=(--job-name="llm_seed_${seed}")
+  sbatch_args+=(--output="${output_path}")
+  if [ -n "${exclude_nodes}" ]; then
+    sbatch_args+=(--exclude="${exclude_nodes}")
+  fi
+  sbatch_args+=(run_job.sh)
+
+  local job_id
+  job_id=$(sbatch "${sbatch_args[@]}")
+  local resolved_output="${output_path//%j/${job_id}}"
+  echo "${job_id}|${resolved_output}"
+}
 
 seed_has_summary() {
   local seed="$1"
@@ -57,7 +120,7 @@ seed_has_cuda_fatal() {
   local f
   for f in "${RUN_DIR}"/slurm-batch*-seed"${seed}"-*.out; do
     [ -f "${f}" ] || continue
-    if grep -q "FATAL: CUDA not usable in this allocation" "${f}"; then
+    if is_cuda_fatal_file "${f}"; then
       return 0
     fi
   done
@@ -95,18 +158,18 @@ wait_for_jobs() {
 while [ "$submitted" -lt "$NUM_RUNS" ]; do
   batch_job_ids=()
   batch_seeds=()
+  batch_outputs=()
 
   for ((i=0; i<BATCH_SIZE && submitted<NUM_RUNS; i++)); do
     seed=${current_seed}
-    job_id=$(sbatch --parsable \
-      --export=ALL,EXPERIMENT_SEED=${seed},BATCH_ID=${BATCH_ID} \
-      --job-name="llm_seed_${seed}" \
-      --output="${RUN_DIR}/slurm-batch${BATCH_ID}-seed${seed}-%j.out" \
-      run_job.sh)
+    submission=$(submit_seed_job "${seed}" "${BATCH_ID}")
+    job_id="${submission%%|*}"
+    out_file="${submission#*|}"
 
-    echo "Submitted seed=${seed} job_id=${job_id}"
+    echo "Submitted seed=${seed} job_id=${job_id} out=${out_file}"
     batch_job_ids+=("${job_id}")
     batch_seeds+=("${seed}")
+    batch_outputs+=("${out_file}")
     submitted=$((submitted + 1))
     current_seed=$((current_seed + 1))
   done
@@ -114,6 +177,16 @@ while [ "$submitted" -lt "$NUM_RUNS" ]; do
   echo "Waiting for batch to finish: ${batch_job_ids[*]}"
   wait_for_jobs "${batch_job_ids[@]}"
   echo "Batch complete."
+
+  for idx in "${!batch_seeds[@]}"; do
+    seed="${batch_seeds[$idx]}"
+    jid="${batch_job_ids[$idx]}"
+    ofile="${batch_outputs[$idx]}"
+    if is_cuda_fatal_file "${ofile}"; then
+      record_bad_node_for_job "${jid}"
+      echo "Seed ${seed}: CUDA-fatal detected in ${ofile}"
+    fi
+  done
 
   # Fast-path retry for known bad CUDA allocations.
   for seed in "${batch_seeds[@]}"; do
@@ -133,14 +206,16 @@ while [ "$submitted" -lt "$NUM_RUNS" ]; do
     next_retry=$((current_retries + 1))
     CUDA_FAST_RETRY_COUNT[${seed}]="${next_retry}"
     fast_tag="${BATCH_ID}-cf${next_retry}"
-    fast_job_id=$(sbatch --parsable \
-      --export=ALL,EXPERIMENT_SEED=${seed},BATCH_ID=${fast_tag} \
-      --job-name="llm_seed_${seed}" \
-      --output="${RUN_DIR}/slurm-batch${fast_tag}-seed${seed}-%j.out" \
-      run_job.sh)
-    echo "Seed ${seed}: CUDA failure detected, fast-resubmitted job_id=${fast_job_id} (${next_retry}/${MAX_CUDA_FAST_RETRIES})"
+    fast_submission=$(submit_seed_job "${seed}" "${fast_tag}")
+    fast_job_id="${fast_submission%%|*}"
+    fast_out_file="${fast_submission#*|}"
+    echo "Seed ${seed}: CUDA failure detected, fast-resubmitted job_id=${fast_job_id} (${next_retry}/${MAX_CUDA_FAST_RETRIES}) out=${fast_out_file}"
     echo "Waiting for fast retry job: ${fast_job_id}"
     wait_for_jobs "${fast_job_id}"
+    if is_cuda_fatal_file "${fast_out_file}"; then
+      record_bad_node_for_job "${fast_job_id}"
+      echo "Seed ${seed}: CUDA-fatal repeated on fast retry."
+    fi
     echo "Fast retry complete for seed ${seed}."
   done
 done
@@ -158,21 +233,28 @@ for ((round=1; round<=MAX_RETRY_ROUNDS; round++)); do
   idx=0
   while [ "$idx" -lt "${#missing_seeds[@]}" ]; do
     batch_job_ids=()
+    batch_outputs=()
     for ((i=0; i<BATCH_SIZE && idx<${#missing_seeds[@]}; i++)); do
       seed=${missing_seeds[$idx]}
       retry_tag="${BATCH_ID}-r${round}"
-      job_id=$(sbatch --parsable \
-        --export=ALL,EXPERIMENT_SEED=${seed},BATCH_ID=${retry_tag} \
-        --job-name="llm_seed_${seed}" \
-        --output="${RUN_DIR}/slurm-batch${retry_tag}-seed${seed}-%j.out" \
-        run_job.sh)
-      echo "Resubmitted seed=${seed} job_id=${job_id}"
+      submission=$(submit_seed_job "${seed}" "${retry_tag}")
+      job_id="${submission%%|*}"
+      out_file="${submission#*|}"
+      echo "Resubmitted seed=${seed} job_id=${job_id} out=${out_file}"
       batch_job_ids+=("${job_id}")
+      batch_outputs+=("${out_file}")
       idx=$((idx + 1))
     done
 
     echo "Waiting for retry batch to finish: ${batch_job_ids[*]}"
     wait_for_jobs "${batch_job_ids[@]}"
+    for j in "${!batch_job_ids[@]}"; do
+      jid="${batch_job_ids[$j]}"
+      ofile="${batch_outputs[$j]}"
+      if is_cuda_fatal_file "${ofile}"; then
+        record_bad_node_for_job "${jid}"
+      fi
+    done
     echo "Retry batch complete."
   done
 done
@@ -182,6 +264,11 @@ if [ "${#final_missing[@]}" -eq 0 ]; then
   echo "Completed: all ${NUM_RUNS} seeds have final summaries."
 else
   echo "WARNING: missing summaries after retries for seeds: ${final_missing[*]}"
+fi
+
+if [ -s "${BAD_NODE_FILE}" ]; then
+  echo "Runtime bad nodes discovered:"
+  sort -u "${BAD_NODE_FILE}" | sed 's/^/  - /'
 fi
 
 echo "Collect results with: python3 gather_results.py \"${RUN_DIR}/slurm-batch*-seed*.out\""

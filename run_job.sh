@@ -7,7 +7,7 @@
 #SBATCH --mem=96G
 #SBATCH --time=06:00:00
 #SBATCH --output=slurm-%j.out
-#SBATCH --exclude=hendrixgpu01fl,hendrixfut01fl,hendrixgpu03fl,hendrixgpu04fl,hendrixgpu06fl,hendrixgpu07fl,hendrixgpu09fl,hendrixgpu10fl,hendrixgpu12fl,hendrixgpu17fl,hendrixgpu20fl,hendrixgpu22fl,hendrixgpu26fl
+#SBATCH --exclude=hendrixgpu01fl,hendrixfut01fl,hendrixgpu03fl,hendrixgpu04fl,hendrixgpu06fl,hendrixgpu07fl,hendrixgpu09fl,hendrixgpu10fl,hendrixgpu12fl,hendrixgpu13fl,hendrixgpu17fl,hendrixgpu18fl,hendrixgpu20fl,hendrixgpu22fl,hendrixgpu23fl,hendrixgpu26fl
 
 set -euo pipefail
 
@@ -34,6 +34,20 @@ print("CUDA devices:", torch.cuda.device_count())
 if not torch.cuda.is_available() or torch.cuda.device_count() == 0:
     print("FATAL: CUDA not usable in this allocation", file=sys.stderr)
     sys.exit(42)
+
+# Some nodes pass torch.cuda.is_available() but still fail on first real kernels
+# with "no kernel image is available for execution on the device".
+for idx in range(torch.cuda.device_count()):
+    try:
+        with torch.cuda.device(idx):
+            x = torch.randn((256, 256), device=f"cuda:{idx}", dtype=torch.float16)
+            y = x @ x
+            torch.cuda.synchronize(idx)
+            _ = float(y[0, 0].item())
+        print(f"CUDA kernel smoke test ok on cuda:{idx}")
+    except Exception as e:
+        print(f"FATAL: CUDA kernel smoke test failed on cuda:{idx}: {e}", file=sys.stderr)
+        sys.exit(43)
 PY
 
 # Install dependencies once on login node instead of every job to avoid CUDA re-init issues
