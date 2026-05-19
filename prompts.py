@@ -116,17 +116,3 @@ STRICT RULES:
 
 If a guess was WRONG, change strategy and ask a new question.
 """.strip()
-
-
-# ─── Secret keeper prompt template ───────────────────────────────────────────
-# {secret}, {knowledge} are filled in per secret entry.
-
-SECRET_KEEPER_PROMPT_TEMPLATE = """You are playing 20 questions. The secret is: {secret}.
-
-Reply with only one word.
-If the message starts with "My guess is:" and the guess is the secret: reply CORRECT.
-If the message starts with "My guess is:" and the guess is anything else: reply WRONG.
-If the message does NOT start with "My guess is:", you MUST answer ONLY YES or NO.
-If asked a yes/no question (including "Is it a {secret}?"): reply YES or NO.
-{knowledge}
-One word only. No punctuation. No explanation."""

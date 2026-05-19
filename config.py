@@ -20,17 +20,12 @@ MODE = os.environ.get("MODE", "tool")
 # ─── Models ─────────────────────────────────────────────────────────────────
 GUESSER_MODEL = os.environ.get("GUESSER_MODEL", "Qwen/Qwen3.5-4B-Base")
 SECRET_MODEL  = os.environ.get("SECRET_MODEL", "Qwen/Qwen3.5-4B-Base")
-JUDGE_MODEL   = os.environ.get("JUDGE_MODEL", "Qwen/Qwen3-8B")
 
 # ─── Game settings ──────────────────────────────────────────────────────────
 MAX_TURNS = 20
 MAX_HINTS = 5   # only used in tool mode
 MAX_WEB_SEARCHES = 5   # only used in tool mode
 MAX_ACTIONS_PER_ROUND = 35   # hard ceiling on guesser actions per round (tool mode); also the CarbonTracker epoch budget
-
-# ─── Evaluation ─────────────────────────────────────────────────────────────
-RUN_JUDGE    = False
-DATASET_PATH = "dataset.json"
 
 # ─── Carbon tracking ────────────────────────────────────────────────────────
 CARBON_LOG_DIR = "carbon_logs"

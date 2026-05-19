@@ -1,17 +1,3 @@
-"""
-game/base.py
-────────────
-BaseGame: the core 20 Questions loop shared by all game modes.
-
-To add a new game variant:
-  1. Create a new file in game/ (e.g. game/tool_use.py)
-  2. Subclass BaseGame
-  3. Override only the methods that differ:
-       - _parse_action()    to recognise new action keywords
-       - _pre_turn_hook()   to inject logic before each turn (e.g. forced hints)
-     Everything else (loop control, Q/A handling, GameRecord building) is inherited.
-"""
-
 from __future__ import annotations
 
 import config
@@ -43,7 +29,7 @@ class BaseGame:
         """
         Args:
             secret_prompt:         System prompt for the secret keeper model.
-            secret_label:          Human-readable label (must match dataset.json).
+            secret_label:          Human-readable label for the secret.
             round_number:          Round index used for console output only.
             guesser_model:         Loaded guesser LLM.
             guesser_tokenizer:     Matching tokenizer for guesser.

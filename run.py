@@ -51,7 +51,7 @@ def _seed_everything(seed: int) -> None:
 EXPERIMENT_SEED = int(os.environ.get("EXPERIMENT_SEED", "42"))
 _seed_everything(EXPERIMENT_SEED)
 print(f"Experiment seed: {EXPERIMENT_SEED}")
-from evaluation import evaluate_game, load_judge_model, summarise_results
+from evaluation import evaluate_game, summarise_results
 from models import load_model
 
 
@@ -75,8 +75,6 @@ def main() -> None:
     # ── Load models ──────────────────────────────────────────────────────────
     guesser_model, guesser_tokenizer = load_model(config.GUESSER_MODEL)
     secret_model,  secret_tokenizer  = load_model(config.SECRET_MODEL)
-    if config.RUN_JUDGE:
-        load_judge_model(config.JUDGE_MODEL)
 
     # ── Carbon tracking ──────────────────────────────────────────────────────
     # One tracker per game so we get clean per-game energy/CO2 numbers.
@@ -144,15 +142,10 @@ def main() -> None:
         if record.was_correct:
             stats["correct"] += 1
 
-    # ── Evaluate (judge excluded from carbon tracking) ────────────────────────
+    # ── Evaluate ──────────────────────────────────────────────────────────────
     eval_results = []
     for record, secret in records:
-        result = evaluate_game(
-            record,
-            dataset_path=config.DATASET_PATH,
-            judge_model_name=config.JUDGE_MODEL,
-            run_judge=config.RUN_JUDGE,
-        )
+        result = evaluate_game(record)
         eval_results.append(result)
         print(result)
 

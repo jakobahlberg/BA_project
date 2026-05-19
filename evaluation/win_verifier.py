@@ -1,41 +1,28 @@
-"""
-evaluation/win_verifier.py
-──────────────────────────
-Multi-step, deterministic win verification pipeline.
-
-Runs four steps after each game to decide whether a win is verified,
-without relying on the secret keeper's (potentially unreliable) signal.
-Also computes a secret-keeper accuracy metric as a side product.
-
-Steps
------
-1. Normalised exact match         — only when secret keeper said CORRECT
-2. Embedding similarity (≥ 0.90) — any guess vs. secret (catches missed wins)
-3. Leak detection (metric only)   — did secret keeper reveal the answer?
-4. Verified CORRECT cross-check   — secondary win signal via embedding (≥ 0.70)
-
-Step 5 (informational):
-   Secret-keeper accuracy         — fraction of responses that were consistent
-                                    with the ground truth
-
-Confidence levels
------------------
-  "high"       : Step 1 OR Step 2 fired
-  "medium"     : Step 4 fired (and no false-CORRECT detected)
-  "unverified" : none of the above
-"""
-
 from __future__ import annotations
 
 import re
 import unicodedata
 from dataclasses import dataclass
-from typing import List, Tuple
+from typing import List, Optional, Tuple
 
 import numpy as np
+from sentence_transformers import SentenceTransformer
 
-from evaluation.layer2 import _get_embed_model
 from evaluation.records import GameRecord
+
+
+# ── Embedding model cache (loaded once, reused across all rounds) ─────────────
+
+_EMBED_MODEL: Optional[SentenceTransformer] = None
+
+
+def _get_embed_model(model_name: str = "all-MiniLM-L6-v2") -> SentenceTransformer:
+    """Load and cache the sentence embedding model."""
+    global _EMBED_MODEL
+    if _EMBED_MODEL is None:
+        print(f"[Evaluator] Loading embedding model: {model_name}")
+        _EMBED_MODEL = SentenceTransformer(model_name)
+    return _EMBED_MODEL
 
 
 # ── Thresholds ────────────────────────────────────────────────────────────────
@@ -57,22 +44,14 @@ class WinVerificationResult:
     verified_win:            bool
     win_confidence:          str        # "high" | "medium" | "unverified"
 
-    # Step 1
-    step1_exact_match:       bool
-
     # Step 2
-    step2_embedding_verified: bool
     best_guess_sim:           float     # highest cosine sim across all guesses
-    best_guess:               str       # the guess that achieved best_guess_sim
 
     # Step 3 (metric only)
     leaked:                  bool
-    leak_responses:          List[str]
 
     # Step 4
-    step4_correct_verified:  bool
     false_correct:           bool       # CORRECT said, but sim < false threshold
-    correct_guess_sim:       float      # sim of the guess that triggered CORRECT
 
     # Step 5 (metric only)
     secret_keeper_accuracy:  float
@@ -145,7 +124,7 @@ def _step2_embedding_guesses(
     secret: str,
     embed_model,
     threshold: float = _STEP2_THRESHOLD,
-) -> Tuple[bool, float, str]:
+) -> Tuple[bool, float]:
     """
     Encode all guesses and the secret, return the best cosine similarity.
 
@@ -153,15 +132,14 @@ def _step2_embedding_guesses(
     keeper incorrectly rejected it.
 
     Returns:
-        (verified, best_sim, best_guess)
+        (verified, best_sim)
     """
     if not guesses:
-        return False, 0.0, ""
+        return False, 0.0
 
     cleaned = [_clean_guess(g) for g in guesses]
     # Deduplicate: use cleaned version only when it differs from the original
     all_guess_texts = guesses + [c for c, g in zip(cleaned, guesses) if c != g]
-    source_guesses  = guesses + [g for c, g in zip(cleaned, guesses) if c != g]
 
     texts = all_guess_texts + [secret]
     embs = embed_model.encode(texts, convert_to_numpy=True, normalize_embeddings=True)
@@ -169,10 +147,9 @@ def _step2_embedding_guesses(
     secret_emb = embs[-1]
 
     sims = guess_embs @ secret_emb
-    best_idx = int(np.argmax(sims))
-    best_sim = float(sims[best_idx])
+    best_sim = float(np.max(sims))
 
-    return best_sim >= threshold, best_sim, source_guesses[best_idx]
+    return best_sim >= threshold, best_sim
 
 
 # ── Step 3 — Leak detection (metric, not used for verified_win) ───────────────
@@ -182,7 +159,7 @@ def _step3_leak_detection(
     secret: str,
     embed_model,
     threshold: float = _STEP3_LEAK_THRESHOLD,
-) -> Tuple[bool, List[str]]:
+) -> bool:
     """
     Scan all YES/NO responses (not guess responses) for leaks.
 
@@ -191,7 +168,7 @@ def _step3_leak_detection(
     ≥ threshold with the secret.
 
     Returns:
-        (leaked, list_of_leaking_responses)
+        True if any question response leaked the secret.
     """
     question_turns = [
         (content, raw)
@@ -199,7 +176,7 @@ def _step3_leak_detection(
         if action == "question"
     ]
     if not question_turns:
-        return False, []
+        return False
 
     norm_secret = _normalize(secret)
     raw_responses = [raw for _, raw in question_turns]
@@ -211,14 +188,12 @@ def _step3_leak_detection(
     secret_emb = embs[-1]
     sims = resp_embs @ secret_emb
 
-    leak_responses: List[str] = []
     for idx, (_, raw) in enumerate(question_turns):
         if norm_secret in _normalize(raw):
-            leak_responses.append(raw)
-        elif float(sims[idx]) >= threshold:
-            leak_responses.append(raw)
-
-    return bool(leak_responses), leak_responses
+            return True
+        if float(sims[idx]) >= threshold:
+            return True
+    return False
 
 
 # ── Step 4 — Verified CORRECT cross-check ────────────────────────────────────
@@ -229,16 +204,15 @@ def _step4_verified_correct(
     embed_model,
     threshold: float = _STEP4_CORRECT_THRESHOLD,
     false_threshold: float = _STEP4_FALSE_THRESHOLD,
-) -> Tuple[bool, bool, float]:
+) -> Tuple[bool, bool]:
     """
     When the secret keeper said CORRECT, verify by embedding similarity.
 
     Returns:
-        (step4_verified, false_correct, correct_guess_sim)
+        (step4_verified, false_correct)
 
-        step4_verified  : True if the guess that got CORRECT has sim ≥ threshold
-        false_correct   : True if sim < false_threshold (hallucinated CORRECT)
-        correct_guess_sim: the similarity score of that guess
+        step4_verified : True if the guess that got CORRECT has sim ≥ threshold
+        false_correct  : True if sim < false_threshold (hallucinated CORRECT)
     """
     for action, content, raw_response in turn_log:
         if action == "guess" and "CORRECT" in raw_response.upper():
@@ -247,14 +221,14 @@ def _step4_verified_correct(
             )
             sim = float(embs[0] @ embs[1])
             if sim >= threshold:
-                return True, False, sim
+                return True, False
             elif sim < false_threshold:
-                return False, True, sim
+                return False, True
             else:
                 # In between: not confident enough either way
-                return False, False, sim
+                return False, False
     # CORRECT was never said
-    return False, False, 0.0
+    return False, False
 
 
 # ── Step 5 — Secret keeper accuracy metric ───────────────────────────────────
@@ -312,11 +286,12 @@ def verify_win(
     """
     Run the full multi-step win verification pipeline on a completed game.
 
-    Reuses the embedding model cached by layer2 — no extra model is loaded.
+    The embedding model is cached after first load — no extra model is loaded
+    on subsequent rounds.
 
     Args:
         record:           Completed GameRecord.
-        embed_model_name: Sentence-transformers model (must match layer2's model).
+        embed_model_name: Sentence-transformers model name.
 
     Returns:
         WinVerificationResult with all signals and confidence level populated.
@@ -325,15 +300,15 @@ def verify_win(
 
     step1 = _step1_normalized_match(record.turn_log, record.secret)
 
-    step2_verified, best_guess_sim, best_guess = _step2_embedding_guesses(
+    step2_verified, best_guess_sim = _step2_embedding_guesses(
         record.guesses, record.secret, embed_model
     )
 
-    leaked, leak_responses = _step3_leak_detection(
+    leaked = _step3_leak_detection(
         record.turn_log, record.secret, embed_model
     )
 
-    step4_verified, false_correct, correct_guess_sim = _step4_verified_correct(
+    step4_verified, false_correct = _step4_verified_correct(
         record.turn_log, record.secret, embed_model
     )
 
@@ -355,14 +330,8 @@ def verify_win(
     return WinVerificationResult(
         verified_win=verified_win,
         win_confidence=win_confidence,
-        step1_exact_match=step1,
-        step2_embedding_verified=step2_verified,
         best_guess_sim=best_guess_sim,
-        best_guess=best_guess,
         leaked=leaked,
-        leak_responses=leak_responses,
-        step4_correct_verified=step4_verified,
         false_correct=false_correct,
-        correct_guess_sim=correct_guess_sim,
         secret_keeper_accuracy=secret_keeper_accuracy,
     )

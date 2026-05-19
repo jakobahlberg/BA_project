@@ -1,15 +1,4 @@
-"""
-models.py
-─────────
-Model loading and text generation utilities.
-
-All model I/O lives here so game logic never imports from transformers directly.
-Swap out generate_answer() here to change generation behaviour globally.
-"""
-
 from __future__ import annotations
-
-from typing import Optional
 
 import torch
 from transformers import AutoModelForCausalLM, AutoTokenizer

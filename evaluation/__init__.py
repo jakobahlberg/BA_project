@@ -4,45 +4,24 @@ import numpy as np
 
 from evaluation.records import GameRecord, EvaluationResult
 from evaluation.layer1 import layer1_game_outcome
-from evaluation.layer2 import layer2_question_quality
-from evaluation.layer3 import layer3_llm_judge, load_judge_model
 from evaluation.win_verifier import verify_win
 
 
 def evaluate_game(
     record: GameRecord,
-    dataset_path: str = "dataset.json",
     embed_model_name: str = "all-MiniLM-L6-v2",
-    judge_model_name: str = "Qwen/Qwen3-8B",
-    run_judge: bool = True,
 ) -> EvaluationResult:
     """
-    Run all three evaluation layers on a completed game and return an EvaluationResult.
+    Score a completed game (outcome + win verification) and return an EvaluationResult.
 
     Args:
         record:           Completed GameRecord from a single round.
-        dataset_path:     Path to dataset.json (used for Layer 2 IG and coverage).
-        embed_model_name: Sentence-transformers model for Layer 2 embeddings.
-        judge_model_name: HuggingFace model for the Layer 3 judge.
-        run_judge:        Set False to skip Layer 3 (faster, no extra model needed).
+        embed_model_name: Sentence-transformers model for win-verification embeddings.
 
     Returns:
         EvaluationResult with all scores and details populated.
     """
-    win, eff, rel, l1 = layer1_game_outcome(record)
-
-    sem_rel, coverage, ig, l2, div_trace = layer2_question_quality(
-        record, dataset_path=dataset_path, embed_model_name=embed_model_name
-    )
-
-    if run_judge:
-        strat, qq, lc, sa, gf, l3, judge_won, feedbacks = layer3_llm_judge(
-            record, judge_model_name=judge_model_name
-        )
-    else:
-        strat = qq = lc = sa = gf = l3 = 0.0
-        judge_won = record.was_correct
-        feedbacks = {}
+    win, eff, rel = layer1_game_outcome(record)
 
     wv = verify_win(record, embed_model_name=embed_model_name)
 
@@ -50,31 +29,14 @@ def evaluate_game(
         win_score=win,
         efficiency_score=eff,
         secret_reliability_score=rel,
-        layer1_score=l1,
-        semantic_relevance_score=sem_rel,
-        canonical_coverage_score=coverage,
-        information_gain_score=ig,
-        layer2_score=l2,
-        llm_judge_strategy=strat,
-        llm_judge_question_quality=qq,
-        llm_judge_logical_consistency=lc,
-        llm_judge_secret_accuracy=sa,
-        llm_judge_guesser_format=gf,
-        layer3_score=l3,
-        judge_won=judge_won,
         hints_used=record.hints_used,
         web_searches_used=record.web_searches_used,
         tool_calls_used=record.hints_used + record.web_searches_used,
         verified_win=wv.verified_win,
         win_confidence=wv.win_confidence,
-        step1_exact_match=wv.step1_exact_match,
-        step2_embedding_verified=wv.step2_embedding_verified,
         best_guess_sim=wv.best_guess_sim,
-        best_guess=wv.best_guess,
         leaked=wv.leaked,
-        step4_correct_verified=wv.step4_correct_verified,
         false_correct=wv.false_correct,
-        correct_guess_sim=wv.correct_guess_sim,
         secret_keeper_accuracy=wv.secret_keeper_accuracy,
         details={
             "secret": record.secret,
@@ -84,8 +46,6 @@ def evaluate_game(
             "num_questions": len(record.questions),
             "num_guesses": len(record.guesses),
             "hints_used": record.hints_used,
-            "diversity_trace": div_trace,
-            "judge_feedbacks": feedbacks,
         },
     )
 
@@ -105,11 +65,7 @@ def summarise_results(results: List[EvaluationResult]) -> Dict:
         return {}
 
     fields = [
-        "win_score", "efficiency_score", "secret_reliability_score", "layer1_score",
-        "semantic_relevance_score", "canonical_coverage_score", "information_gain_score",
-        "layer2_score", "llm_judge_strategy", "llm_judge_question_quality",
-        "llm_judge_logical_consistency", "llm_judge_secret_accuracy",
-        "llm_judge_guesser_format", "layer3_score",
+        "win_score", "efficiency_score", "secret_reliability_score",
         "hints_used", "web_searches_used", "tool_calls_used",
         "best_guess_sim", "secret_keeper_accuracy",
     ]
@@ -123,10 +79,6 @@ def summarise_results(results: List[EvaluationResult]) -> Dict:
     summary["num_medium_confidence"] = int(sum(r.win_confidence == "medium" for r in results))
     summary["num_leaked"]            = int(sum(r.leaked for r in results))
     summary["num_false_correct"]     = int(sum(r.false_correct for r in results))
-    summary["judge_win_count"]       = int(sum(r.judge_won for r in results))
-    summary["judge_layer1_agreement"] = float(
-        np.mean([r.judge_won == bool(r.win_score) for r in results])
-    )
     summary["verified_layer1_agreement"] = float(
         np.mean([r.verified_win == bool(r.win_score) for r in results])
     )

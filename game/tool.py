@@ -1,12 +1,3 @@
-"""
-game/tool.py
-────────────
-ToolGame: extends BaseGame with USE_HINT and WEB_SEARCH actions.
-
-Neither action consumes a turn. Hints are capped at config.MAX_HINTS,
-web searches at config.MAX_WEB_SEARCHES.
-"""
-
 from __future__ import annotations
 
 import config

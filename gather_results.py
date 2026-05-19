@@ -13,10 +13,6 @@ CSV_PATH  = os.path.join(RESULTS_DIR, "results.csv")
 
 SCORE_FIELDS = [
     "avg_win_score", "avg_efficiency_score", "avg_secret_reliability_score",
-    "avg_semantic_relevance_score", "avg_canonical_coverage_score", "avg_information_gain_score",
-    "avg_llm_judge_strategy", "avg_llm_judge_question_quality",
-    "avg_llm_judge_logical_consistency", "avg_llm_judge_secret_accuracy",
-    "avg_llm_judge_guesser_format", "avg_layer3_score", "judge_layer1_agreement",
     "avg_hints_used", "avg_web_searches_used", "avg_tool_calls_used",
     # Win verification
     "avg_best_guess_sim", "avg_secret_keeper_accuracy", "verified_layer1_agreement",
@@ -24,11 +20,10 @@ SCORE_FIELDS = [
 
 CSV_COLUMNS = (
     ["run_id", "seed", "mode", "guesser_model", "secret_model", "num_games", "num_wins",
-     "judge_win_count",
      "num_verified_wins", "num_high_confidence", "num_medium_confidence",
      "num_leaked", "num_false_correct"]
     + SCORE_FIELDS
-    + ["avg_diversity", "energy_kwh", "energy_per_game_wh", "co2_g", "co2_per_game_g", "adjusted_co2_per_game_g"]
+    + ["energy_kwh", "energy_per_game_wh", "co2_g", "co2_per_game_g"]
 )
 
 CARBON_HEADER = "=== CARBON SUMMARY ==="
@@ -71,7 +66,6 @@ def parse_out(path: str) -> Optional[dict]:
         "secret_model":  get(r"Secret model\s*:\s*(.+)"),
         "num_games":     num_games,
         "num_wins":              get(r"num_wins\s*:\s*(\d+)", int),
-        "judge_win_count":       get(r"judge_win_count\s*:\s*(\d+)", int),
         "num_verified_wins":     get(r"num_verified_wins\s*:\s*(\d+)", int),
         "num_high_confidence":   get(r"num_high_confidence\s*:\s*(\d+)", int),
         "num_medium_confidence": get(r"num_medium_confidence\s*:\s*(\d+)", int),
@@ -84,18 +78,6 @@ def parse_out(path: str) -> Optional[dict]:
     }
     for f in SCORE_FIELDS:
         row[f] = get(rf"{f}\s*:\s*([\d.]+)", float)
-
-    # adjusted_co2: reliability * co2_per_game — if reliability=1 carbon is unchanged,
-    # if reliability<1 carbon is scaled down proportionally.
-    rel = row.get("avg_llm_judge_secret_accuracy")
-    co2_pg = row.get("co2_per_game_g")
-    row["adjusted_co2_per_game_g"] = round(rel * co2_pg, 6) if (rel is not None and co2_pg is not None and rel > 0) else None
-
-    # avg diversity across all games, excluding Q1 (always 1.0)
-    all_scores = []
-    for line in re.findall(r"Q1:[\d.]+(.+)", text):
-        all_scores += [float(v) for v in re.findall(r"Q\d+:([\d.]+)", line)]
-    row["avg_diversity"] = round(sum(all_scores) / len(all_scores), 4) if all_scores else None
 
     return row
 
@@ -194,23 +176,15 @@ def main() -> None:
 _AGGREGATE_METRICS = [
     # Win / outcome
     "avg_win_score", "avg_verified_win_score",
-    # Layer 1
     "avg_efficiency_score", "avg_secret_reliability_score",
-    # Layer 2
-    "avg_semantic_relevance_score", "avg_canonical_coverage_score",
-    "avg_information_gain_score",
-    # Layer 3
-    "avg_llm_judge_strategy", "avg_llm_judge_question_quality",
-    "avg_llm_judge_logical_consistency", "avg_llm_judge_secret_accuracy",
-    "avg_llm_judge_guesser_format", "avg_layer3_score",
     # Agreement
-    "judge_layer1_agreement", "verified_layer1_agreement",
+    "verified_layer1_agreement",
     # Win verification
     "avg_best_guess_sim", "avg_secret_keeper_accuracy",
     # Tool usage (tool mode only; 0 for standard)
     "avg_hints_used", "avg_web_searches_used", "avg_tool_calls_used",
     # Energy (per-game so comparable across run sizes)
-    "energy_per_game_wh", "co2_per_game_g", "adjusted_co2_per_game_g",
+    "energy_per_game_wh", "co2_per_game_g",
 ]
 
 
