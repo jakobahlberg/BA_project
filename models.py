@@ -3,7 +3,12 @@ from __future__ import annotations
 import re
 
 import torch
-from transformers import AutoModelForCausalLM, AutoTokenizer
+from transformers import (
+    AutoModelForCausalLM,
+    AutoModelForImageTextToText,
+    AutoProcessor,
+    AutoTokenizer,
+)
 
 
 def _is_gemma(tokenizer: AutoTokenizer) -> bool:
@@ -23,8 +28,30 @@ def _is_gemma(tokenizer: AutoTokenizer) -> bool:
     return True
 
 
+def _is_gemma4_nano(model_name: str) -> bool:
+    """
+    True for the multimodal Gemma 4 nano variants (E2B / E4B).
+
+    These models are MatFormer-style multimodal (text + image + audio) and
+    their canonical HF loader is AutoProcessor + AutoModelForImageTextToText.
+    For text-only inference the processor still exposes the same surface
+    (apply_chat_template, __call__, decode) so the rest of the pipeline
+    works unchanged.
+    """
+    return bool(re.search(r"gemma-?4-?e[24]b", model_name.lower()))
+
+
 def _is_llama_model_name(model_name: str) -> bool:
     return "llama" in model_name.lower()
+
+
+def _eos_token_id(tokenizer_or_processor) -> int | None:
+    """Return eos_token_id whether given a tokenizer or a multimodal processor."""
+    eos = getattr(tokenizer_or_processor, "eos_token_id", None)
+    if eos is not None:
+        return eos
+    inner = getattr(tokenizer_or_processor, "tokenizer", None)
+    return getattr(inner, "eos_token_id", None) if inner is not None else None
 
 
 def _prepare_messages(messages: list[dict], tokenizer: AutoTokenizer) -> list[dict]:
@@ -75,20 +102,33 @@ def _format_plain_chat(messages: list[dict]) -> str:
 
 def load_model(model_name: str) -> tuple:
     """
-    Load a causal LM and its tokenizer from HuggingFace.
+    Load a causal LM (or multimodal model) and its tokenizer/processor
+    from HuggingFace.
 
     Args:
         model_name: HuggingFace model identifier (e.g. "Qwen/Qwen3-8B").
 
     Returns:
-        (model, tokenizer) tuple ready for generate_answer().
+        (model, tokenizer_or_processor) tuple ready for generate_answer().
+        For Gemma 4 nano variants (E2B / E4B) the second element is an
+        AutoProcessor; for everything else it is an AutoTokenizer.
     """
     print(f"[Models] Loading: {model_name}")
-    tokenizer = AutoTokenizer.from_pretrained(model_name)
     model_kwargs = {
         "device_map": "auto",
         "dtype": torch.float16,
     }
+
+    # Gemma 4 nano (E2B / E4B): multimodal — use processor + image-text-to-text class.
+    # For text-only use the processor's apply_chat_template / __call__ / decode
+    # behave identically to AutoTokenizer, so generate_answer needs no changes.
+    if _is_gemma4_nano(model_name):
+        processor = AutoProcessor.from_pretrained(model_name)
+        model = AutoModelForImageTextToText.from_pretrained(model_name, **model_kwargs)
+        print(f"[Models] Loaded (multimodal): {model_name}")
+        return model, processor
+
+    tokenizer = AutoTokenizer.from_pretrained(model_name)
     # Mixed GPU fleets can trigger CUDA kernel-image errors with certain fast attention paths.
     # For Llama-family models, prefer eager attention for broader compatibility.
     if _is_llama_model_name(model_name):
@@ -146,7 +186,7 @@ def generate_answer(
         do_sample=True,
         temperature=0.7,
         top_p=0.8,
-        pad_token_id=tokenizer.eos_token_id,
+        pad_token_id=_eos_token_id(tokenizer),
         repetition_penalty=1.0,
     )
 
