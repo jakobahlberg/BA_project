@@ -5,13 +5,27 @@ import re
 import torch
 from transformers import (
     AutoModelForCausalLM,
-    AutoModelForImageTextToText,
-    AutoProcessor,
     AutoTokenizer,
 )
 
+try:
+    from transformers import AutoModelForImageTextToText, AutoProcessor
+except ImportError:
+    AutoModelForImageTextToText = None
+    AutoProcessor = None
 
-def _is_gemma(tokenizer: AutoTokenizer) -> bool:
+
+def _text_tokenizer(tokenizer_or_processor):
+    """Return the inner text tokenizer when given a multimodal processor."""
+    return getattr(tokenizer_or_processor, "tokenizer", tokenizer_or_processor)
+
+
+def _name_or_path(tokenizer_or_processor) -> str:
+    text_tokenizer = _text_tokenizer(tokenizer_or_processor)
+    return getattr(text_tokenizer, "name_or_path", getattr(tokenizer_or_processor, "name_or_path", ""))
+
+
+def _is_gemma(tokenizer_or_processor) -> bool:
     """
     True only for Gemma 1–3, which lack a system role in their chat template.
 
@@ -19,7 +33,7 @@ def _is_gemma(tokenizer: AutoTokenizer) -> bool:
     Qwen3's chat-template conventions, so it should NOT take the legacy
     merge-system-into-first-user path in _prepare_messages.
     """
-    name = tokenizer.name_or_path.lower()
+    name = _name_or_path(tokenizer_or_processor).lower()
     if "gemma" not in name:
         return False
     # Exclude Gemma 4 variants: "gemma-4", "gemma_4", "gemma4", "gemma-4-e2b", etc.
@@ -45,16 +59,16 @@ def _is_llama_model_name(model_name: str) -> bool:
     return "llama" in model_name.lower()
 
 
-def _eos_token_id(tokenizer_or_processor) -> int | None:
+def _eos_token_id(model, tokenizer_or_processor) -> int | None:
     """Return eos_token_id whether given a tokenizer or a multimodal processor."""
-    eos = getattr(tokenizer_or_processor, "eos_token_id", None)
+    text_tokenizer = _text_tokenizer(tokenizer_or_processor)
+    eos = getattr(text_tokenizer, "eos_token_id", None)
     if eos is not None:
         return eos
-    inner = getattr(tokenizer_or_processor, "tokenizer", None)
-    return getattr(inner, "eos_token_id", None) if inner is not None else None
+    return getattr(model.generation_config, "eos_token_id", None)
 
 
-def _prepare_messages(messages: list[dict], tokenizer: AutoTokenizer) -> list[dict]:
+def _prepare_messages(messages: list[dict], tokenizer_or_processor) -> list[dict]:
     """
     Normalize a chat message list for models that don't support a system role.
 
@@ -62,7 +76,7 @@ def _prepare_messages(messages: list[dict], tokenizer: AutoTokenizer) -> list[di
     We merge any leading system message into the first user message so the
     conversation starts with a user turn as Gemma expects.
     """
-    if not _is_gemma(tokenizer):
+    if not _is_gemma(tokenizer_or_processor):
         return messages
 
     prepared: list[dict] = []
@@ -100,6 +114,43 @@ def _format_plain_chat(messages: list[dict]) -> str:
     return "\n".join(lines)
 
 
+def _apply_chat_template(messages: list[dict], tokenizer_or_processor) -> str:
+    """Render messages with either a tokenizer chat template or processor chat template."""
+    template_owner = tokenizer_or_processor
+    text_tokenizer = _text_tokenizer(tokenizer_or_processor)
+
+    if not hasattr(template_owner, "apply_chat_template"):
+        template_owner = text_tokenizer
+
+    if hasattr(template_owner, "apply_chat_template"):
+        try:
+            return template_owner.apply_chat_template(
+                messages,
+                tokenize=False,
+                add_generation_prompt=True,
+                enable_thinking=False,
+            )
+        except TypeError:
+            return template_owner.apply_chat_template(
+                messages,
+                tokenize=False,
+                add_generation_prompt=True,
+            )
+
+    return _format_plain_chat(messages)
+
+
+def _tokenize_text(text: str, model, tokenizer_or_processor):
+    """Tokenize text with either a tokenizer or a multimodal processor."""
+    if hasattr(tokenizer_or_processor, "tokenizer") and callable(tokenizer_or_processor):
+        try:
+            return tokenizer_or_processor(text=[text], return_tensors="pt").to(model.device)
+        except TypeError:
+            return tokenizer_or_processor(text=text, return_tensors="pt").to(model.device)
+
+    return tokenizer_or_processor([text], return_tensors="pt").to(model.device)
+
+
 def load_model(model_name: str) -> tuple:
     """
     Load a causal LM (or multimodal model) and its tokenizer/processor
@@ -123,6 +174,11 @@ def load_model(model_name: str) -> tuple:
     # For text-only use the processor's apply_chat_template / __call__ / decode
     # behave identically to AutoTokenizer, so generate_answer needs no changes.
     if _is_gemma4_nano(model_name):
+        if AutoProcessor is None or AutoModelForImageTextToText is None:
+            raise RuntimeError(
+                "Gemma 4 requires a recent Transformers version with "
+                "AutoProcessor and AutoModelForImageTextToText support."
+            )
         processor = AutoProcessor.from_pretrained(model_name)
         model = AutoModelForImageTextToText.from_pretrained(model_name, **model_kwargs)
         print(f"[Models] Loaded (multimodal): {model_name}")
@@ -147,8 +203,8 @@ def load_model(model_name: str) -> tuple:
 
 def generate_answer(
     messages: list[dict],
-    model: AutoModelForCausalLM,
-    tokenizer: AutoTokenizer,
+    model,
+    tokenizer,
     max_new_tokens: int = 100,
 ) -> str:
     """
@@ -161,24 +217,16 @@ def generate_answer(
     Args:
         messages:       Chat history in OpenAI format (list of role/content dicts).
         model:          Loaded causal LM.
-        tokenizer:      Matching tokenizer.
+        tokenizer:      Matching tokenizer or processor.
         max_new_tokens: Maximum tokens to generate per call.
 
     Returns:
         Decoded response string (stripped, special tokens removed).
     """
     prepared = _prepare_messages(messages, tokenizer)
-    if getattr(tokenizer, "chat_template", None):
-        text = tokenizer.apply_chat_template(
-            prepared,
-            tokenize=False,
-            add_generation_prompt=True,
-            enable_thinking=False,
-        )
-    else:
-        text = _format_plain_chat(prepared)
+    text = _apply_chat_template(prepared, tokenizer)
 
-    inputs = tokenizer([text], return_tensors="pt").to(model.device)
+    inputs = _tokenize_text(text, model, tokenizer)
 
     outputs = model.generate(
         **inputs,
@@ -186,11 +234,11 @@ def generate_answer(
         do_sample=True,
         temperature=0.7,
         top_p=0.8,
-        pad_token_id=_eos_token_id(tokenizer),
+        pad_token_id=_eos_token_id(model, tokenizer),
         repetition_penalty=1.0,
     )
 
     generated_tokens = outputs[0][inputs.input_ids.shape[-1]:]
-    answer = tokenizer.decode(generated_tokens, skip_special_tokens=True).strip()
+    answer = _text_tokenizer(tokenizer).decode(generated_tokens, skip_special_tokens=True).strip()
     messages.append({"role": "assistant", "content": answer})
     return answer
