@@ -1,11 +1,26 @@
 from __future__ import annotations
 
+import re
+
 import torch
 from transformers import AutoModelForCausalLM, AutoTokenizer
 
 
 def _is_gemma(tokenizer: AutoTokenizer) -> bool:
-    return "gemma" in tokenizer.name_or_path.lower()
+    """
+    True only for Gemma 1–3, which lack a system role in their chat template.
+
+    Gemma 4 (incl. E2B / E4B) has native system-role support and matches
+    Qwen3's chat-template conventions, so it should NOT take the legacy
+    merge-system-into-first-user path in _prepare_messages.
+    """
+    name = tokenizer.name_or_path.lower()
+    if "gemma" not in name:
+        return False
+    # Exclude Gemma 4 variants: "gemma-4", "gemma_4", "gemma4", "gemma-4-e2b", etc.
+    if re.search(r"gemma[-_]?4", name):
+        return False
+    return True
 
 
 def _is_llama_model_name(model_name: str) -> bool:
