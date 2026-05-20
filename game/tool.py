@@ -50,14 +50,12 @@ class ToolGame(BaseGame):
         secret_model,
         secret_tokenizer,
         guesser_system_prompt: str,
-        tracker=None,
     ) -> None:
         super().__init__(
             secret_prompt, secret_label, round_number,
             guesser_model, guesser_tokenizer,
             secret_model, secret_tokenizer,
             guesser_system_prompt,
-            tracker=tracker,
         )
         self.hints             = get_hints_for_secret(secret_label)
         self.hints_used        = 0
@@ -160,9 +158,6 @@ class ToolGame(BaseGame):
                 ended_by_action_cap = True
                 break
 
-            # Bracket guesser + tool execution as one epoch (secret keeper excluded).
-            if self.tracker:
-                self.tracker.epoch_start()
             guesser_output = generate_answer(
                 self.guesser_messages, self.guesser_model, self.guesser_tokenizer
             )
@@ -173,8 +168,6 @@ class ToolGame(BaseGame):
 
             if action == "hint":
                 hint_text = self._use_hint()
-                if self.tracker:
-                    self.tracker.epoch_end()
                 self.guesser_messages.append({
                     "role": "user",
                     "content": (
@@ -186,8 +179,6 @@ class ToolGame(BaseGame):
 
             elif action == "web_search":
                 search_result = self._use_web_search(content or "")
-                if self.tracker:
-                    self.tracker.epoch_end()
                 self.guesser_messages.append({
                     "role": "user",
                     "content": (
@@ -197,10 +188,6 @@ class ToolGame(BaseGame):
                     ),
                 })
                 continue  # does NOT increment turn
-
-            # End epoch BEFORE secret-keeper handling so it isn't measured.
-            if self.tracker:
-                self.tracker.epoch_end()
 
             if action == "question":
                 answer = self._handle_question(content)
