@@ -116,18 +116,45 @@ class ToolGame(BaseGame):
 
     # ── Action parsing ───────────────────────────────────────────────────────
 
+    @staticmethod
+    def _normalize_action_line(line: str) -> str:
+        """
+        Make minor formatting repairs before parsing an action.
+
+        Some models emit near-miss tool names such as USE_ HINT or
+        WEB_ SEARCH. These are clearly intended as tool calls, so normalize
+        whitespace around underscores rather than treating them as questions.
+        """
+        line = " ".join(line.split())
+        line = line.replace("_ ", "_").replace(" _", "_")
+        return line
+
     def _parse_action(self, text: str) -> tuple[str, str | None]:
         lines = [ln.strip() for ln in text.splitlines() if ln.strip()]
         for line in lines:
+            line = self._normalize_action_line(line)
+            if line.upper().startswith("ACTION:"):
+                line = self._normalize_action_line(line.split(":", 1)[-1].strip())
             upper = line.upper()
-            if "USE_HINT" in upper:
-                return "hint", None
+            if upper == "USE_HINT":
+                if self.hints_used < len(self.hints):
+                    return "hint", None
+                continue
             if upper.startswith("WEB_SEARCH:"):
-                return "web_search", line.split(":", 1)[-1].strip()
+                query = line.split(":", 1)[-1].strip()
+                if query and self.web_searches_used < config.MAX_WEB_SEARCHES:
+                    return "web_search", query
+                continue
             if upper.startswith("QUESTION:"):
-                return "question", line.split(":", 1)[-1].strip()
+                question = line.split(":", 1)[-1].strip()
+                if question:
+                    return "question", question
+                continue
             if upper.startswith("GUESS:"):
-                return "guess", line.split(":", 1)[-1].strip()
+                guess = line.split(":", 1)[-1].strip()
+                if guess:
+                    return "guess", guess
+                continue
         for line in lines:
             if line.endswith("?"):
                 return "question", line
