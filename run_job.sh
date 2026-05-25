@@ -69,7 +69,8 @@ if [ -z "${HF_TOKEN:-}" ]; then
     fi
 fi
 
-mkdir -p "$SLURM_SUBMIT_DIR/carbon_logs"
+export CARBON_LOG_DIR="${SLURM_TMPDIR:-/tmp}/carbon_logs_${SLURM_JOB_ID:-$$}"
+mkdir -p "$CARBON_LOG_DIR"
 
 # Run from the directory where sbatch was called — works for any home dir
 python3 "$SLURM_SUBMIT_DIR/run.py"

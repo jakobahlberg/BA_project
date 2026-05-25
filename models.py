@@ -59,6 +59,10 @@ def _is_llama_model_name(model_name: str) -> bool:
     return "llama" in model_name.lower()
 
 
+def _is_hunyuan(tokenizer_or_processor) -> bool:
+    return "hunyuan" in _name_or_path(tokenizer_or_processor).lower()
+
+
 def _eos_token_id(model, tokenizer_or_processor) -> int | None:
     """Return eos_token_id whether given a tokenizer or a multimodal processor."""
     text_tokenizer = _text_tokenizer(tokenizer_or_processor)
@@ -75,7 +79,23 @@ def _prepare_messages(messages: list[dict], tokenizer_or_processor) -> list[dict
     Gemma requires strict user/assistant alternation and has no system turn.
     We merge any leading system message into the first user message so the
     conversation starts with a user turn as Gemma expects.
+
+    Hunyuan: force fast-thinking. The enable_thinking=False kwarg in
+    _apply_chat_template is honored by the 1.8B/4B chat templates but ignored
+    by the 7B template (which leaves reasoning on and gets stuck in <think>
+    loops). The content-level /no_think control is obeyed by all Hunyuan
+    variants, so we prepend it to each user turn. New dicts are built so the
+    caller's persistent conversation history stays clean across turns.
     """
+    if _is_hunyuan(tokenizer_or_processor):
+        prepared = []
+        for msg in messages:
+            if msg["role"] == "user" and not msg["content"].lstrip().startswith("/no_think"):
+                prepared.append({"role": "user", "content": "/no_think " + msg["content"]})
+            else:
+                prepared.append(msg)
+        return prepared
+
     if not _is_gemma(tokenizer_or_processor):
         return messages
 

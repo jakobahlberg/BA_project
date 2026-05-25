@@ -28,4 +28,4 @@ MAX_WEB_SEARCHES = 5   # only used in tool mode
 MAX_ACTIONS_PER_ROUND = 35   # hard ceiling on guesser actions per round (tool mode); also the CarbonTracker epoch budget
 
 # ─── Carbon tracking ────────────────────────────────────────────────────────
-CARBON_LOG_DIR = "carbon_logs"
+CARBON_LOG_DIR = os.environ.get("CARBON_LOG_DIR", "carbon_logs")
