@@ -114,6 +114,17 @@ class ToolGame(BaseGame):
         print(f"[WEB SEARCH RESULT] {result}")
         return result
 
+    def _remaining_tools_msg(self) -> str:
+        """Human-readable summary of the tool budgets that still have uses left."""
+        hints_left = len(self.hints) - self.hints_used
+        searches_left = config.MAX_WEB_SEARCHES - self.web_searches_used
+        parts = []
+        if hints_left > 0:
+            parts.append(f"USE_HINT ({hints_left} left)")
+        if searches_left > 0:
+            parts.append(f"WEB_SEARCH ({searches_left} left)")
+        return ", ".join(parts)
+
     # ── Action parsing ───────────────────────────────────────────────────────
 
     @staticmethod
@@ -126,11 +137,14 @@ class ToolGame(BaseGame):
         whitespace around underscores rather than treating them as questions.
         """
         line = " ".join(line.split())
+        line = line.strip("`*_ ")
         line = line.replace("_ ", "_").replace(" _", "_")
+        line = line.strip("`*_ ")
         return line
 
     def _parse_action(self, text: str) -> tuple[str, str | None]:
         lines = [ln.strip() for ln in text.splitlines() if ln.strip()]
+        attempted_depleted_tool = False
         for line in lines:
             line = self._normalize_action_line(line)
             if line.upper().startswith("ACTION:"):
@@ -139,11 +153,13 @@ class ToolGame(BaseGame):
             if upper == "USE_HINT":
                 if self.hints_used < len(self.hints):
                     return "hint", None
+                attempted_depleted_tool = True
                 continue
             if upper.startswith("WEB_SEARCH:"):
                 query = line.split(":", 1)[-1].strip()
                 if query and self.web_searches_used < config.MAX_WEB_SEARCHES:
                     return "web_search", query
+                attempted_depleted_tool = True
                 continue
             if upper.startswith("QUESTION:"):
                 question = line.split(":", 1)[-1].strip()
@@ -158,6 +174,11 @@ class ToolGame(BaseGame):
         for line in lines:
             if line.endswith("?"):
                 return "question", line
+        # The model only tried to use a tool whose budget is exhausted. Nudge it
+        # to switch strategy rather than silently demoting the line to a question
+        # (which would otherwise be answered by the keeper and pollute the record).
+        if attempted_depleted_tool:
+            return "tool_exhausted", None
         return "unknown", lines[0] if lines else text
 
     # ── Main loop ────────────────────────────────────────────────────────────
@@ -216,6 +237,22 @@ class ToolGame(BaseGame):
                 })
                 continue  # does NOT increment turn
 
+            elif action == "tool_exhausted":
+                avail = self._remaining_tools_msg()
+                if avail:
+                    guidance = (
+                        f"That tool is used up. Tools still available: {avail}. "
+                        "Otherwise ask a QUESTION or make a GUESS."
+                    )
+                else:
+                    guidance = (
+                        "All tools are used up (no hints or web searches remain). "
+                        "Ask a QUESTION or make a GUESS."
+                    )
+                print(f"[TOOL EXHAUSTED] {guidance}")
+                self.guesser_messages.append({"role": "user", "content": guidance})
+                continue  # does NOT increment turn
+
             if action == "question":
                 answer = self._handle_question(content)
                 print(f"Secret: {answer}")
@@ -243,10 +280,13 @@ class ToolGame(BaseGame):
             self.turn += 1
 
             if not self.game_over:
-                self.guesser_messages.append({
-                    "role": "user",
-                    "content": "Reminder: Consider using USE_HINT or WEB_SEARCH.",
-                })
+                avail = self._remaining_tools_msg()
+                reminder = (
+                    f"Reminder: Consider using {avail}."
+                    if avail
+                    else "Reminder: No tools remain — ask a QUESTION or make a GUESS."
+                )
+                self.guesser_messages.append({"role": "user", "content": reminder})
 
         if not self.game_over:
             if ended_by_action_cap:

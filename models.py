@@ -27,36 +27,57 @@ def _name_or_path(tokenizer_or_processor) -> str:
 
 def _is_gemma(tokenizer_or_processor) -> bool:
     """
-    True only for Gemma 1–3, which lack a system role in their chat template.
+    True for Gemma variants that need strict user/assistant alternation cleanup.
 
-    Gemma 4 (incl. E2B / E4B) has native system-role support and matches
-    Qwen3's chat-template conventions, so it should NOT take the legacy
-    merge-system-into-first-user path in _prepare_messages.
+    Gemma 2 and Gemma 3 reject system turns / repeated user turns in their
+    chat template, so we merge system prompts into the first user message and
+    collapse consecutive user messages before rendering.
     """
     name = _name_or_path(tokenizer_or_processor).lower()
     if "gemma" not in name:
         return False
-    # Exclude Gemma 4 variants: "gemma-4", "gemma_4", "gemma4", "gemma-4-e2b", etc.
+    # Gemma 4 currently uses the processor path and should keep its native template.
     if re.search(r"gemma[-_]?4", name):
         return False
     return True
 
 
-def _is_gemma4_nano(model_name: str) -> bool:
+def _is_gemma_image_text_model(model_name: str) -> bool:
     """
-    True for the multimodal Gemma 4 nano variants (E2B / E4B).
+    True for Gemma variants whose canonical HF loader is processor based.
 
-    These models are MatFormer-style multimodal (text + image + audio) and
-    their canonical HF loader is AutoProcessor + AutoModelForImageTextToText.
-    For text-only inference the processor still exposes the same surface
-    (apply_chat_template, __call__, decode) so the rest of the pipeline
-    works unchanged.
+    Gemma 3 4B+ and Gemma 4 E2B/E4B are image-text/any-to-any models. We only
+    use their text interface, but they still need AutoProcessor plus
+    AutoModelForImageTextToText.
     """
-    return bool(re.search(r"gemma-?4-?e[24]b", model_name.lower()))
+    normalized = model_name.lower()
+    return bool(
+        re.search(r"gemma-?4-?e[24]b", normalized)
+        or re.search(r"gemma-?3-?(4b|12b|27b)", normalized)
+    )
+
+
+def _is_ministral3_model(model_name: str) -> bool:
+    """
+    True for Mistral3 variants (Ministral-3-*) whose HF loader is processor-based.
+
+    Ministral-3-3B and Ministral-3-8B use Mistral3ForConditionalGeneration with a
+    PixtralProcessor, so they need AutoProcessor + AutoModelForImageTextToText
+    exactly like Gemma 3/4 multimodal models.
+    """
+    return "ministral" in model_name.lower()
+
+
+def _is_ministral(tokenizer_or_processor) -> bool:
+    return "ministral" in _name_or_path(tokenizer_or_processor).lower()
 
 
 def _is_llama_model_name(model_name: str) -> bool:
     return "llama" in model_name.lower()
+
+
+def _is_hunyuan(tokenizer_or_processor) -> bool:
+    return "hunyuan" in _name_or_path(tokenizer_or_processor).lower()
 
 
 def _eos_token_id(model, tokenizer_or_processor) -> int | None:
@@ -75,7 +96,39 @@ def _prepare_messages(messages: list[dict], tokenizer_or_processor) -> list[dict
     Gemma requires strict user/assistant alternation and has no system turn.
     We merge any leading system message into the first user message so the
     conversation starts with a user turn as Gemma expects.
+
+    Hunyuan: force fast-thinking. The enable_thinking=False kwarg in
+    _apply_chat_template is honored by the 1.8B/4B chat templates but ignored
+    by the 7B template (which leaves reasoning on and gets stuck in <think>
+    loops). The content-level /no_think control is obeyed by all Hunyuan
+    variants, so we prepend it to each user turn. New dicts are built so the
+    caller's persistent conversation history stays clean across turns.
+
+    Ministral 3 supports an optional system message, but its template requires
+    the remaining conversation to alternate user/assistant. The game can append
+    consecutive user turns (for example result + reminder), so merge repeated
+    roles before rendering.
     """
+    if _is_hunyuan(tokenizer_or_processor):
+        prepared = []
+        for msg in messages:
+            if msg["role"] == "user" and not msg["content"].lstrip().startswith("/no_think"):
+                prepared.append({"role": "user", "content": "/no_think " + msg["content"]})
+            else:
+                prepared.append(msg)
+        return prepared
+
+    if _is_ministral(tokenizer_or_processor):
+        prepared: list[dict] = []
+        for msg in messages:
+            role = msg["role"]
+            content = msg["content"]
+            if prepared and prepared[-1]["role"] == role and role != "system":
+                prepared[-1] = {"role": role, "content": prepared[-1]["content"] + "\n\n" + content}
+            else:
+                prepared.append(msg)
+        return prepared
+
     if not _is_gemma(tokenizer_or_processor):
         return messages
 
@@ -114,25 +167,42 @@ def _format_plain_chat(messages: list[dict]) -> str:
     return "\n".join(lines)
 
 
+def _processor_messages(messages: list[dict]) -> list[dict]:
+    """
+    Convert plain string chat messages to the content-list format expected by
+    Gemma 3/4 processors.
+    """
+    converted: list[dict] = []
+    for msg in messages:
+        content = msg.get("content", "")
+        if isinstance(content, str):
+            content = [{"type": "text", "text": content}]
+        converted.append({"role": msg.get("role", "user"), "content": content})
+    return converted
+
+
 def _apply_chat_template(messages: list[dict], tokenizer_or_processor) -> str:
     """Render messages with either a tokenizer chat template or processor chat template."""
     template_owner = tokenizer_or_processor
     text_tokenizer = _text_tokenizer(tokenizer_or_processor)
+    template_messages = messages
 
     if not hasattr(template_owner, "apply_chat_template"):
         template_owner = text_tokenizer
+    elif hasattr(tokenizer_or_processor, "tokenizer"):
+        template_messages = _processor_messages(messages)
 
     if hasattr(template_owner, "apply_chat_template"):
         try:
             return template_owner.apply_chat_template(
-                messages,
+                template_messages,
                 tokenize=False,
                 add_generation_prompt=True,
                 enable_thinking=False,
             )
         except TypeError:
             return template_owner.apply_chat_template(
-                messages,
+                template_messages,
                 tokenize=False,
                 add_generation_prompt=True,
             )
@@ -149,6 +219,58 @@ def _tokenize_text(text: str, model, tokenizer_or_processor):
             return tokenizer_or_processor(text=text, return_tensors="pt").to(model.device)
 
     return tokenizer_or_processor([text], return_tensors="pt").to(model.device)
+
+
+def _build_inputs(messages: list[dict], model, tokenizer_or_processor):
+    """
+    Build model inputs using the native processor path when available.
+
+    Gemma 3/4 image-text models should tokenize through
+    processor.apply_chat_template(..., tokenize=True). Rendering to a string
+    and then calling the processor again can produce bad tokenization for these
+    checkpoints.
+    """
+    if hasattr(tokenizer_or_processor, "tokenizer") and hasattr(tokenizer_or_processor, "apply_chat_template"):
+        template_messages = _processor_messages(messages)
+        try:
+            return tokenizer_or_processor.apply_chat_template(
+                template_messages,
+                tokenize=True,
+                return_dict=True,
+                return_tensors="pt",
+                add_generation_prompt=True,
+                enable_thinking=False,
+            ).to(model.device)
+        except TypeError:
+            return tokenizer_or_processor.apply_chat_template(
+                template_messages,
+                tokenize=True,
+                return_dict=True,
+                return_tensors="pt",
+                add_generation_prompt=True,
+            ).to(model.device)
+
+    if hasattr(tokenizer_or_processor, "apply_chat_template"):
+        try:
+            return tokenizer_or_processor.apply_chat_template(
+                messages,
+                tokenize=True,
+                return_dict=True,
+                return_tensors="pt",
+                add_generation_prompt=True,
+                enable_thinking=False,
+            ).to(model.device)
+        except TypeError:
+            return tokenizer_or_processor.apply_chat_template(
+                messages,
+                tokenize=True,
+                return_dict=True,
+                return_tensors="pt",
+                add_generation_prompt=True,
+            ).to(model.device)
+
+    text = _apply_chat_template(messages, tokenizer_or_processor)
+    return _tokenize_text(text, model, tokenizer_or_processor)
 
 
 def load_model(model_name: str) -> tuple:
@@ -170,21 +292,30 @@ def load_model(model_name: str) -> tuple:
         "dtype": torch.float16,
     }
 
-    # Gemma 4 nano (E2B / E4B): multimodal — use processor + image-text-to-text class.
-    # For text-only use the processor's apply_chat_template / __call__ / decode
-    # behave identically to AutoTokenizer, so generate_answer needs no changes.
-    if _is_gemma4_nano(model_name):
+    # Multimodal / processor-based models: use AutoProcessor + AutoModelForImageTextToText.
+    # Covers Gemma 3 4B+, Gemma 4 E2B/E4B, and Ministral-3 (PixtralProcessor).
+    # For text-only inference the processor surface (apply_chat_template / decode)
+    # is identical to AutoTokenizer, so generate_answer needs no changes.
+    if _is_gemma_image_text_model(model_name) or _is_ministral3_model(model_name):
         if AutoProcessor is None or AutoModelForImageTextToText is None:
             raise RuntimeError(
-                "Gemma 4 requires a recent Transformers version with "
+                "This model requires a recent Transformers version with "
                 "AutoProcessor and AutoModelForImageTextToText support."
             )
-        processor = AutoProcessor.from_pretrained(model_name)
+        processor_kwargs = {"fix_mistral_regex": True} if _is_ministral3_model(model_name) else {}
+        try:
+            processor = AutoProcessor.from_pretrained(model_name, **processor_kwargs)
+        except TypeError:
+            processor = AutoProcessor.from_pretrained(model_name)
         model = AutoModelForImageTextToText.from_pretrained(model_name, **model_kwargs)
         print(f"[Models] Loaded (multimodal): {model_name}")
         return model, processor
 
-    tokenizer = AutoTokenizer.from_pretrained(model_name)
+    tokenizer_kwargs = {"fix_mistral_regex": True} if "mistral" in model_name.lower() else {}
+    try:
+        tokenizer = AutoTokenizer.from_pretrained(model_name, **tokenizer_kwargs)
+    except TypeError:
+        tokenizer = AutoTokenizer.from_pretrained(model_name)
     # Mixed GPU fleets can trigger CUDA kernel-image errors with certain fast attention paths.
     # For Llama-family models, prefer eager attention for broader compatibility.
     if _is_llama_model_name(model_name):
@@ -224,9 +355,7 @@ def generate_answer(
         Decoded response string (stripped, special tokens removed).
     """
     prepared = _prepare_messages(messages, tokenizer)
-    text = _apply_chat_template(prepared, tokenizer)
-
-    inputs = _tokenize_text(text, model, tokenizer)
+    inputs = _build_inputs(prepared, model, tokenizer)
 
     outputs = model.generate(
         **inputs,

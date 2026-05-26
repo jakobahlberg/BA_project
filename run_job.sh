@@ -51,7 +51,7 @@ for idx in range(torch.cuda.device_count()):
 PY
 
 # Install dependencies once on login node instead of every job to avoid CUDA re-init issues
-# python3 -m pip install --user transformers accelerate torch sentencepiece carbontracker sentence-transformers fpdf2 pymupdf ddgs
+# python3 -m pip install --user transformers accelerate torch sentencepiece carbontracker sentence-transformers fpdf2 pymupdf ddgs mistral-common
 
 # HuggingFace cache (override via environment if needed)
 export HF_HOME="${HF_HOME:-$HOME/.cache/huggingface}"
@@ -69,7 +69,8 @@ if [ -z "${HF_TOKEN:-}" ]; then
     fi
 fi
 
-mkdir -p "$SLURM_SUBMIT_DIR/carbon_logs"
+export CARBON_LOG_DIR="${SLURM_TMPDIR:-/tmp}/carbon_logs_${SLURM_JOB_ID:-$$}"
+mkdir -p "$CARBON_LOG_DIR"
 
 # Run from the directory where sbatch was called — works for any home dir
 python3 "$SLURM_SUBMIT_DIR/run.py"

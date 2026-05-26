@@ -61,9 +61,12 @@ def parse_out(path: str) -> Optional[dict]:
     row = {
         "run_id":        os.path.basename(path).replace(".out", ""),
         "seed":          seed,
-        "mode":          get(r"Mode\s*:\s*(\S+)"),
-        "guesser_model": get(r"Guesser model\s*:\s*(.+)"),
-        "secret_model":  get(r"Secret model\s*:\s*(.+)"),
+        # Anchor on the run.py === SUMMARY === block so web-search results in
+        # the game log (which can contain arbitrary text like "Mode: Virginia")
+        # don't get picked up as the first regex match.
+        "mode":          get(r"=== SUMMARY ===.*?Mode\s*:\s*(\S+)", flags=re.DOTALL),
+        "guesser_model": get(r"=== SUMMARY ===.*?Guesser model\s*:\s*([^\n]+)", flags=re.DOTALL),
+        "secret_model":  get(r"=== SUMMARY ===.*?Secret model\s*:\s*([^\n]+)", flags=re.DOTALL),
         "num_games":     num_games,
         "num_wins":              get(r"num_wins\s*:\s*(\d+)", int),
         "num_verified_wins":     get(r"num_verified_wins\s*:\s*(\d+)", int),
