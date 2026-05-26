@@ -7,23 +7,19 @@ from evaluation.layer1 import layer1_game_outcome
 from evaluation.win_verifier import verify_win
 
 
-def evaluate_game(
-    record: GameRecord,
-    embed_model_name: str = "all-MiniLM-L6-v2",
-) -> EvaluationResult:
+def evaluate_game(record: GameRecord) -> EvaluationResult:
     """
     Score a completed game (outcome + win verification) and return an EvaluationResult.
 
     Args:
-        record:           Completed GameRecord from a single round.
-        embed_model_name: Sentence-transformers model for win-verification embeddings.
+        record: Completed GameRecord from a single round.
 
     Returns:
         EvaluationResult with all scores and details populated.
     """
     win, eff, rel = layer1_game_outcome(record)
 
-    wv = verify_win(record, embed_model_name=embed_model_name)
+    wv = verify_win(record)
 
     return EvaluationResult(
         win_score=win,
@@ -37,7 +33,6 @@ def evaluate_game(
         best_guess_sim=wv.best_guess_sim,
         leaked=wv.leaked,
         false_correct=wv.false_correct,
-        secret_keeper_accuracy=wv.secret_keeper_accuracy,
         details={
             "secret": record.secret,
             "turns_used": record.turns_used,
@@ -67,7 +62,7 @@ def summarise_results(results: List[EvaluationResult]) -> Dict:
     fields = [
         "win_score", "efficiency_score", "secret_reliability_score",
         "hints_used", "web_searches_used", "tool_calls_used",
-        "best_guess_sim", "secret_keeper_accuracy",
+        "best_guess_sim",
     ]
     summary: Dict = {}
     for f in fields:
@@ -76,7 +71,6 @@ def summarise_results(results: List[EvaluationResult]) -> Dict:
     summary["num_wins"]              = int(sum(r.win_score for r in results))
     summary["num_verified_wins"]     = int(sum(r.verified_win for r in results))
     summary["num_high_confidence"]   = int(sum(r.win_confidence == "high" for r in results))
-    summary["num_medium_confidence"] = int(sum(r.win_confidence == "medium" for r in results))
     summary["num_leaked"]            = int(sum(r.leaked for r in results))
     summary["num_false_correct"]     = int(sum(r.false_correct for r in results))
     summary["verified_layer1_agreement"] = float(

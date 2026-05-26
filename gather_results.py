@@ -15,12 +15,12 @@ SCORE_FIELDS = [
     "avg_win_score", "avg_efficiency_score", "avg_secret_reliability_score",
     "avg_hints_used", "avg_web_searches_used", "avg_tool_calls_used",
     # Win verification
-    "avg_best_guess_sim", "avg_secret_keeper_accuracy", "verified_layer1_agreement",
+    "avg_best_guess_sim", "verified_layer1_agreement",
 ]
 
 CSV_COLUMNS = (
     ["run_id", "seed", "mode", "guesser_model", "secret_model", "num_games", "num_wins",
-     "num_verified_wins", "num_high_confidence", "num_medium_confidence",
+     "num_verified_wins", "num_high_confidence",
      "num_leaked", "num_false_correct"]
     + SCORE_FIELDS
     + ["energy_kwh", "energy_per_game_wh", "co2_g", "co2_per_game_g"]
@@ -71,7 +71,6 @@ def parse_out(path: str) -> Optional[dict]:
         "num_wins":              get(r"num_wins\s*:\s*(\d+)", int),
         "num_verified_wins":     get(r"num_verified_wins\s*:\s*(\d+)", int),
         "num_high_confidence":   get(r"num_high_confidence\s*:\s*(\d+)", int),
-        "num_medium_confidence": get(r"num_medium_confidence\s*:\s*(\d+)", int),
         "num_leaked":            get(r"num_leaked\s*:\s*(\d+)", int),
         "num_false_correct":     get(r"num_false_correct\s*:\s*(\d+)", int),
         "energy_kwh":    energy_kwh,
@@ -183,7 +182,7 @@ _AGGREGATE_METRICS = [
     # Agreement
     "verified_layer1_agreement",
     # Win verification
-    "avg_best_guess_sim", "avg_secret_keeper_accuracy",
+    "avg_best_guess_sim",
     # Tool usage (tool mode only; 0 for standard)
     "avg_hints_used", "avg_web_searches_used", "avg_tool_calls_used",
     # Energy (per-game so comparable across run sizes)

@@ -39,11 +39,10 @@ class EvaluationResult:
 
     # Win verification (multi-step deterministic pipeline)
     verified_win: bool = False
-    win_confidence: str = "unverified"   # "high" | "medium" | "unverified"
+    win_confidence: str = "unverified"   # "high" | "unverified"
     best_guess_sim: float = 0.0
     leaked: bool = False
     false_correct: bool = False
-    secret_keeper_accuracy: float = 1.0
 
     details: Dict = field(default_factory=dict)
 
@@ -66,7 +65,6 @@ class EvaluationResult:
             f"  Best guess sim        : {self.best_guess_sim:.3f}",
             f"  False CORRECT         : {self.false_correct}",
             f"  Leaked                : {self.leaked}",
-            f"  SK accuracy           : {self.secret_keeper_accuracy:.3f}",
             "=" * 55,
         ]
         return "\n".join(lines)
