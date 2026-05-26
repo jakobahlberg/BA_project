@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 import re
-import unicodedata
 from dataclasses import dataclass
 from typing import List, Optional, Tuple
 
@@ -36,14 +35,10 @@ class WinVerificationResult:
 
 
 def _normalize(text: str) -> str:
-    """Lowercase, strip articles + punctuation, collapse whitespace."""
-    text = text.lower().strip()
-    text = unicodedata.normalize("NFD", text)
-    text = "".join(c for c in text if unicodedata.category(c) != "Mn")
-    text = re.sub(r"\b(a|an|the)\b", " ", text)
+    """Lowercase, strip punctuation, collapse whitespace."""
+    text = text.lower()
     text = re.sub(r"[^\w\s]", " ", text)
-    text = re.sub(r"\s+", " ", text).strip()
-    return text
+    return re.sub(r"\s+", " ", text).strip()
 
 def _required_token(secret: str) -> str:
     """
