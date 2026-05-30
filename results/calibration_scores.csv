@@ -1,0 +1,36 @@
+bucket,expected,secret,guess,required_token,structural,A_minilm,C_crossenc
+easy_correct,1,golden retriever,golden retriever,retriever,1,1.0000,0.9698
+easy_correct,1,London,London,london,1,1.0000,0.9566
+easy_correct,1,Eiffel Tower,Eiffel Tower,eiffel,1,1.0000,0.9660
+easy_correct,1,dog,dog,dog,1,1.0000,0.9534
+easy_correct,1,banana,a banana,banana,1,0.8965,0.9597
+easy_wrong,0,London,Tokyo,london,0,0.4595,0.0116
+easy_wrong,0,golden retriever,car,retriever,0,0.2570,0.0096
+easy_wrong,0,Eiffel Tower,spoon,eiffel,0,-0.0220,0.0096
+easy_wrong,0,dog,computer,dog,0,0.4250,0.0105
+easy_wrong,0,banana,skyscraper,banana,0,0.1778,0.0107
+hard_correct,1,golden retriever,a black golden retriever dog,retriever,1,0.8081,0.7588
+hard_correct,1,pizza,italian pizza with cheese,pizza,1,0.7130,0.5863
+hard_correct,1,Albert Einstein,the german physicist Einstein,einstein,1,0.7739,0.7970
+hard_correct,1,Eiffel Tower,the famous Eiffel Tower in Paris,eiffel,1,0.8516,0.8280
+hard_correct,1,banana,a ripe yellow banana fruit,banana,1,0.7252,0.7370
+hard_wrong,0,London,Which river is connected to London?,london,1,0.5781,0.3133
+hard_wrong,0,golden retriever,labrador,retriever,0,0.5274,0.0236
+hard_wrong,0,London,Paris,london,0,0.5787,0.0230
+hard_wrong,0,dog,Is the dog brown?,dog,1,0.5097,0.1946
+hard_wrong,0,golden retriever,a dog,retriever,0,0.5961,0.4040
+description_wrong,0,London,the capital of England,london,0,0.5113,0.0609
+description_wrong,0,London,the London Eye,london,1,0.6039,0.4019
+description_wrong,0,Albert Einstein,the physicist known for relativity theory,einstein,0,0.6310,0.2334
+description_wrong,0,Eiffel Tower,the tower in Paris,eiffel,0,0.7126,0.6320
+description_wrong,0,banana,a yellow curved fruit,banana,0,0.4715,0.1570
+hint_wrong,0,pizza,something topped with cheese and sauce,pizza,0,0.4371,0.1427
+hint_wrong,0,Albert Einstein,the theory of relativity,einstein,0,0.4526,0.0512
+hint_wrong,0,London,the capital of the United Kingdom,london,0,0.5612,0.1213
+hint_wrong,0,Marie Curie,the scientist who discovered radioactivity,curie,0,0.3022,0.0113
+hint_wrong,0,submarine,a vehicle that travels underwater,submarine,0,0.5796,0.1052
+close_wrong,0,golden retriever,labrador retriever,retriever,1,0.6565,0.3745
+close_wrong,0,Albert Einstein,Isaac Newton,einstein,0,0.7011,0.0160
+close_wrong,0,violin,viola,violin,0,0.7110,0.5398
+close_wrong,0,Tokyo,Kyoto,tokyo,0,0.6397,0.0250
+close_wrong,0,pizza,calzone,pizza,0,0.2705,0.0115
