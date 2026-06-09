@@ -255,14 +255,20 @@ class ToolGame(BaseGame):
 
             if action == "question":
                 answer = self._handle_question(content)
+                raw_line = f"[SECRET RAW] {self.secret_raw_responses[-1]}"
                 print(f"Secret: {answer}")
+                print(raw_line)
                 transcript_lines.append(f"Secret: {answer}")
+                transcript_lines.append(raw_line)
 
             elif action == "guess":
                 correct = self._handle_guess(content)
                 secret_line = f"Secret: {'CORRECT' if correct else 'WRONG'}"
+                raw_line = f"[SECRET RAW] {self.secret_raw_responses[-1]}"
                 print(secret_line)
+                print(raw_line)
                 transcript_lines.append(secret_line)
+                transcript_lines.append(raw_line)
                 if correct:
                     won_line = (
                         f"Guesser won in {self.turn + 1} turns using "
@@ -274,8 +280,11 @@ class ToolGame(BaseGame):
 
             else:
                 answer = self._handle_question(content)
+                raw_line = f"[SECRET RAW] {self.secret_raw_responses[-1]}"
                 print(f"Secret: {answer}")
+                print(raw_line)
                 transcript_lines.append(f"Secret: {answer}")
+                transcript_lines.append(raw_line)
 
             self.turn += 1
 

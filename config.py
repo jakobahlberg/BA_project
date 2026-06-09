@@ -17,6 +17,12 @@ os.environ["HUGGINGFACE_HUB_TOKEN"] = HF_TOKEN
 # Options: "standard" | "tool"
 MODE = os.environ.get("MODE", "tool")
 
+# ─── Prompt variant ─────────────────────────────────────────────────────────
+# Options: "default" | "fewshot"
+# The few-shot variant only changes the guesser system prompt. It does not
+# change game mechanics, parsing, tools, evaluation, or the secret keeper.
+PROMPT_VARIANT = os.environ.get("PROMPT_VARIANT", "default").strip().lower()
+
 # ─── Models ─────────────────────────────────────────────────────────────────
 GUESSER_MODEL = os.environ.get("GUESSER_MODEL", "Qwen/Qwen3.5-4B-Base")
 SECRET_MODEL  = os.environ.get("SECRET_MODEL", "Qwen/Qwen3.5-4B-Base")

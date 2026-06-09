@@ -52,6 +52,59 @@ If a guess was WRONG, change strategy and ask a new question.
 """.strip()
 
 
+TOOL_FEWSHOT_EXAMPLES = """
+
+FEW-SHOT EXAMPLES OF GOOD TOOL USE:
+
+Example 1:
+History:
+QUESTION: Is it a living thing?
+Secret: YES
+QUESTION: Is it an animal?
+Secret: YES
+QUESTION: Is it a bird?
+Secret: YES
+USE_HINT
+Hint: It is known for black and white colouring and cannot fly.
+
+Good next action:
+GUESS: Penguin
+
+Example 2:
+History:
+QUESTION: Is it a man-made object?
+Secret: YES
+QUESTION: Is it used in a kitchen?
+Secret: YES
+QUESTION: Is it used for heating food?
+Secret: YES
+GUESS: Microwave
+Secret: WRONG
+
+Possible good next action:
+WEB_SEARCH: toaster vs microwave heating food differences
+
+Then, after the search result:
+QUESTION: Is it mainly used to brown slices of bread?
+Secret: YES
+GUESS: Toaster
+
+Example 3:
+History:
+QUESTION: Is it man-made?
+Secret: YES
+QUESTION: Is it used to make music?
+Secret: YES
+QUESTION: Is it played with strings?
+Secret: NO
+USE_HINT
+Hint: It has keys or buttons and bellows.
+WEB_SEARCH: musical instrument keys buttons bellows
+
+Good next action:
+GUESS: Accordion
+""".strip()
+
 # ─── Guesser prompt (tool mode: hints + web search) ─────────────────────────
 TOOL_GUESSER_SYSTEM_PROMPT = f"""
 You are the GUESSER in a game of 20 Questions.
@@ -116,3 +169,8 @@ STRICT RULES:
 
 If a guess was WRONG, change strategy and ask a new question.
 """.strip()
+
+if config.PROMPT_VARIANT == "fewshot":
+    TOOL_GUESSER_SYSTEM_PROMPT = (
+        TOOL_GUESSER_SYSTEM_PROMPT + "\n\n" + TOOL_FEWSHOT_EXAMPLES
+    )

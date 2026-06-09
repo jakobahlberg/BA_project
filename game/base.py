@@ -1,8 +1,34 @@
 from __future__ import annotations
 
+import re
+
 import config
 from evaluation.records import GameRecord
 from models import generate_answer
+
+
+_YES_NO_PREFIX_RE = re.compile(r"^\W*(YES|NO)\b", re.IGNORECASE)
+_GUESS_PREFIX_RE = re.compile(r"^\W*(CORRECT|WRONG|INCORRECT|NO)\b", re.IGNORECASE)
+
+
+def parse_yes_no_response(raw: str) -> str:
+    """Map keeper output to YES/NO only when the response starts with YES or NO."""
+    match = _YES_NO_PREFIX_RE.search(raw)
+    if not match:
+        return "NO"
+    token = match.group(1).upper()
+    return "YES" if token == "YES" else "NO"
+
+
+def parse_guess_response(raw: str) -> str:
+    """Map keeper output to CORRECT/WRONG only from the first response token."""
+    normalized = raw.upper()
+    if re.match(r"^\W*NOT\s+CORRECT\b", normalized):
+        return "WRONG"
+    match = _GUESS_PREFIX_RE.search(raw)
+    if not match:
+        return "WRONG"
+    return "CORRECT" if match.group(1).upper() == "CORRECT" else "WRONG"
 
 
 class BaseGame:
@@ -119,7 +145,7 @@ class BaseGame:
         raw = generate_answer(self.secret_messages, self.secret_model, self.secret_tokenizer)
         self.secret_raw_responses.append(raw)
 
-        normalised = "YES" if "YES" in raw.upper() else "NO"
+        normalised = parse_yes_no_response(raw)
         self.questions.append(question)
         self.answers.append(normalised)
         self.turn_log.append(("question", question, normalised))
@@ -155,7 +181,7 @@ class BaseGame:
         self.secret_raw_responses.append(result)
         self.turn_log.append(("guess", guess, result))
 
-        if "CORRECT" in result.strip().upper():
+        if parse_guess_response(result) == "CORRECT":
             return True
 
         self.guesser_messages.append({
@@ -221,14 +247,20 @@ class BaseGame:
 
             if action == "question":
                 answer = self._handle_question(content)
+                raw_line = f"[SECRET RAW] {self.secret_raw_responses[-1]}"
                 print(f"Secret: {answer}")
+                print(raw_line)
                 transcript_lines.append(f"Secret: {answer}")
+                transcript_lines.append(raw_line)
 
             elif action == "guess":
                 correct = self._handle_guess(content)
                 secret_line = f"Secret: {'CORRECT' if correct else 'WRONG'}"
+                raw_line = f"[SECRET RAW] {self.secret_raw_responses[-1]}"
                 print(secret_line)
+                print(raw_line)
                 transcript_lines.append(secret_line)
+                transcript_lines.append(raw_line)
                 if correct:
                     print("Guesser won!")
                     transcript_lines.append("Guesser won!")
@@ -237,8 +269,11 @@ class BaseGame:
             else:
                 # Malformed output — treat as a question to keep the game moving
                 answer = self._handle_question(content)
+                raw_line = f"[SECRET RAW] {self.secret_raw_responses[-1]}"
                 print(f"Secret: {answer}")
+                print(raw_line)
                 transcript_lines.append(f"Secret: {answer}")
+                transcript_lines.append(raw_line)
 
             self.turn += 1
 

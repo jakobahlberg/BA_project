@@ -115,7 +115,15 @@ def _collect_out_files(patterns: Optional[List[str]]) -> List[str]:
                     if re.match(r"slurm-.+\.out", f)
                 )
             else:
-                out_files.extend(glob.glob(p))
+                for match in glob.glob(p):
+                    if os.path.isdir(match):
+                        out_files.extend(
+                            os.path.join(match, f)
+                            for f in os.listdir(match)
+                            if re.match(r"slurm-.+\.out", f)
+                        )
+                    else:
+                        out_files.append(match)
         return sorted({p for p in out_files if os.path.isfile(p)})
 
     # Default: scan root, outputs/, and any runs_*/ subdirectories

@@ -1,8 +1,9 @@
 from __future__ import annotations
+import re
 from typing import Tuple
 from evaluation.records import GameRecord
 
-_VALID_SECRET_RESPONSES = {"YES", "NO", "CORRECT", "WRONG"}
+_VALID_SECRET_RESPONSE_RE = re.compile(r"^\W*(YES|NO|CORRECT|WRONG|INCORRECT)\b", re.IGNORECASE)
 
 def layer1_game_outcome(record: GameRecord) -> Tuple[float, float, float]:
     """
@@ -31,7 +32,7 @@ def layer1_game_outcome(record: GameRecord) -> Tuple[float, float, float]:
     if record.secret_raw_responses:
         valid = sum(
             1 for r in record.secret_raw_responses
-            if any(v in r.upper() for v in _VALID_SECRET_RESPONSES)
+            if _VALID_SECRET_RESPONSE_RE.search(r)
         )
         secret_reliability_score = valid / len(record.secret_raw_responses)
     else:

@@ -23,6 +23,14 @@ def _get_cross_encoder(model_name: str = "cross-encoder/stsb-roberta-large") -> 
 _PRIMARY_THRESHOLD = 0.50   # cross-encoder sim → verified win (+ structural)
 _LEAK_THRESHOLD    = 0.50   # cross-encoder sim → leaked secret in question response
 
+
+def _keeper_said_correct(raw_response: str) -> bool:
+    """True only when the keeper response starts with CORRECT."""
+    normalized = raw_response.upper()
+    if re.match(r"^\W*NOT\s+CORRECT\b", normalized):
+        return False
+    return bool(re.match(r"^\W*CORRECT\b", normalized))
+
 @dataclass
 class WinVerificationResult:
     """Output of the win verification pipeline for one game."""
@@ -123,7 +131,7 @@ def _detect_false_correct(
 ) -> bool:
     """Flag if the keeper said CORRECT on a guess that does NOT pass our verification."""
     for action, content, raw_response in turn_log:
-        if action == "guess" and "CORRECT" in raw_response.upper():
+        if action == "guess" and _keeper_said_correct(raw_response):
             if (_structural_pass(secret, content)
                     and float(cross_encoder.predict([(secret, content)])[0]) >= threshold):
                 return False

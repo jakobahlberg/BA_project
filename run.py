@@ -59,7 +59,56 @@ EXPERIMENT_SEED = int(os.environ.get("EXPERIMENT_SEED", "42"))
 _seed_everything(EXPERIMENT_SEED)
 print(f"Experiment seed: {EXPERIMENT_SEED}")
 from evaluation import evaluate_game, summarise_results
-from models import load_model
+from models import generate_answer, load_model
+
+
+def _env_flag_enabled(name: str) -> bool:
+    return os.environ.get(name, "").strip().lower() in {"1", "true", "yes", "on"}
+
+
+def _one_line(text: str) -> str:
+    return text.replace("\n", "\\n").strip()
+
+
+def _postgame_secret_audit(game, secret_label: str) -> None:
+    """Optionally probe the keeper after the game without touching gameplay state.
+
+    This is intentionally opt-in and runs only after game.play() and carbon
+    tracking are complete. It copies the keeper history before adding audit
+    prompts, so the game transcript, record, metrics, and future prompts are
+    unchanged.
+    """
+    if not _env_flag_enabled("POSTGAME_SECRET_AUDIT"):
+        return
+
+    true_messages = [dict(msg) for msg in game.secret_messages]
+    true_messages.append({"role": "user", "content": f"My guess is: {secret_label}"})
+    true_raw = generate_answer(
+        true_messages,
+        game.secret_model,
+        game.secret_tokenizer,
+        max_new_tokens=20,
+    )
+
+    decoy = "__not_the_secret__"
+    decoy_messages = [dict(msg) for msg in game.secret_messages]
+    decoy_messages.append({"role": "user", "content": f"My guess is: {decoy}"})
+    decoy_raw = generate_answer(
+        decoy_messages,
+        game.secret_model,
+        game.secret_tokenizer,
+        max_new_tokens=20,
+    )
+
+    print(f"[POSTGAME SECRET AUDIT] Round {game.round_number} ({secret_label})")
+    print(
+        f"[POSTGAME SECRET AUDIT] true_guess={secret_label!r} "
+        f"raw={_one_line(true_raw)!r}"
+    )
+    print(
+        f"[POSTGAME SECRET AUDIT] decoy_guess={decoy!r} "
+        f"raw={_one_line(decoy_raw)!r}"
+    )
 
 
 def main() -> None:
@@ -129,6 +178,7 @@ def main() -> None:
         record = game.play()
         tracker.epoch_end()
         tracker.stop()  # flushes the log file we then parse
+        _postgame_secret_audit(game, secret.label)
 
         # Parse the carbontracker log this game just wrote. The dir was wiped
         # at the top of this iteration so exactly one log lives in it.
