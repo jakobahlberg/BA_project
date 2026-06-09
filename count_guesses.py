@@ -7,9 +7,9 @@ from pathlib import Path
 def count_file(filepath):
     text = Path(filepath).read_text(errors="replace")
     rounds      = len(re.findall(r"=== ROUND \d+ START", text))
-    guesses     = len(re.findall(r"^Guesser: (?:ACTION: )?GUESS:", text, re.MULTILINE))
-    questions   = len(re.findall(r"^Guesser: (?:ACTION: )?QUESTION:", text, re.MULTILINE))
-    web_searches = len(re.findall(r"^Guesser: (?:ACTION: )?WEB_SEARCH:", text, re.MULTILINE))
+    guesses     = len(re.findall(r"^Guesser: (?:ACTION: )?GUESS(?::|$)", text, re.MULTILINE))
+    questions   = len(re.findall(r"^Guesser: (?:ACTION: )?QUESTION(?::|$)", text, re.MULTILINE))
+    web_searches = len(re.findall(r"^Guesser: (?:ACTION: )?WEB_SEARCH(?::|$)", text, re.MULTILINE))
     hints       = len(re.findall(r"^Guesser: (?:ACTION: )?USE_HINT", text, re.MULTILINE))
     return {
         "rounds": rounds,

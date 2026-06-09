@@ -1,12 +1,3 @@
-"""
-config.py
-─────────
-Central configuration for all game modes and experiments.
-
-Change MODE to switch between game variants.
-All other settings (models, limits, evaluation) are controlled here.
-"""
-
 import os
 
 # ─── HuggingFace ────────────────────────────────────────────────────────────

@@ -1,0 +1,11 @@
+torch
+transformers
+accelerate
+sentencepiece
+sentence-transformers
+carbontracker
+fpdf2
+pymupdf
+ddgs
+mistral-common
+numpy

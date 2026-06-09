@@ -49,26 +49,15 @@ detect_models() {
   local first
   first=$(ls -1 "$dir"/slurm-batch*-seed*.out 2>/dev/null | head -n 1 || true)
 
-  local guesser secret judge
+  local guesser secret
   guesser=$(grep -m1 "\\[Models\\] Loading:" "$first" 2>/dev/null | sed 's/.*Loading: //')
   secret=$(grep "\\[Models\\] Loading:" "$first" 2>/dev/null | sed 's/.*Loading: //' | sed -n '2p')
-  judge=$(grep -m1 "\\[Evaluator\\] Loading judge model:" "$first" 2>/dev/null | sed 's/.*judge model: //')
 
-  # In many runs RUN_JUDGE=False, so judge line is absent from logs.
-  # Fall back to config.py JUDGE_MODEL so reruns still work.
-  if [ -z "${judge}" ]; then
-    judge=$(python3 - <<'PY' 2>/dev/null
-import config
-print(getattr(config, "JUDGE_MODEL", "Qwen/Qwen3-8B"))
-PY
-)
-  fi
-
-  if [ -z "${guesser}" ] || [ -z "${secret}" ] || [ -z "${judge}" ]; then
+  if [ -z "${guesser}" ] || [ -z "${secret}" ]; then
     return 1
   fi
 
-  echo "${guesser}|${secret}|${judge}"
+  echo "${guesser}|${secret}"
 }
 
 successful_seeds() {
@@ -128,10 +117,9 @@ submit_missing_for_dir() {
     return
   fi
 
-  local guesser secret judge
+  local guesser secret
   guesser=$(echo "$models_line" | cut -d'|' -f1)
   secret=$(echo "$models_line" | cut -d'|' -f2)
-  judge=$(echo "$models_line"  | cut -d'|' -f3)
 
   local round
   for round in $(seq 1 "$MAX_ROUNDS"); do
@@ -153,7 +141,7 @@ submit_missing_for_dir() {
         local rerun_tag="rerun-$(basename "$dir")-r${round}-$(date +%Y%m%d%H%M%S)"
         local jid
         jid=$(sbatch --parsable \
-          --export=ALL,MODE="${mode}",GUESSER_MODEL="${guesser}",SECRET_MODEL="${secret}",JUDGE_MODEL="${judge}",EXPERIMENT_SEED="${seed}",BATCH_ID="${rerun_tag}" \
+          --export=ALL,MODE="${mode}",GUESSER_MODEL="${guesser}",SECRET_MODEL="${secret}",EXPERIMENT_SEED="${seed}",BATCH_ID="${rerun_tag}" \
           --job-name="llm_seed_${seed}" \
           --output="${dir}/slurm-batch${rerun_tag}-seed${seed}-%j.out" \
           run_job.sh)

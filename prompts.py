@@ -1,9 +1,3 @@
-"""
-prompts.py
-──────────
-All prompt strings used across the game.
-"""
-
 import config
 
 # ─── Guesser prompt (standard mode) ─────────────────────────────────────────

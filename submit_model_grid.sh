@@ -9,9 +9,9 @@ set -euo pipefail
 #
 # The script supports two CSV row formats:
 #   1) Explicit configuration row:
-#      label,mode,guesser_model,secret_model,judge_model
+#      label,mode,guesser_model,secret_model
 #   2) Model-pool row (auto cartesian expansion):
-#      label,mode,models,judge_model
+#      label,mode,models
 #      where models is semicolon-separated, e.g.
 #      Qwen/Qwen3.5-4B-Base;Qwen/Qwen3-8B
 #      This expands to all guesser x secret combinations.
@@ -51,8 +51,7 @@ submit_wrapper() {
   local mode="$1"
   local gm="$2"
   local sm="$3"
-  local jm="$4"
-  local run_tag="$5"
+  local run_tag="$4"
 
   local -a sbatch_args
   sbatch_args+=(--parsable)
@@ -61,29 +60,28 @@ submit_wrapper() {
     # Chain wrappers so only one configuration wrapper runs at a time.
     sbatch_args+=(--dependency="afterany:${prev_wrapper_job_id}")
   fi
-  sbatch_args+=(--export=ALL,MODE="${mode}",GUESSER_MODEL="${gm}",SECRET_MODEL="${sm}",JUDGE_MODEL="${jm}")
+  sbatch_args+=(--export=ALL,MODE="${mode}",GUESSER_MODEL="${gm}",SECRET_MODEL="${sm}")
   sbatch_args+=(submit_bulk_seeds.sh "${NUM_RUNS}" "${START_SEED}" "${BATCH_SIZE}" "${POLL_SECONDS}" "${run_tag}")
 
   sbatch "${sbatch_args[@]}"
 }
 
-while IFS=',' read -r label mode guesser secret judge; do
+while IFS=',' read -r label mode guesser secret; do
   # Skip header / empty / comments
   if [ -z "${label}" ] || [[ "${label}" = \#* ]]; then
     continue
   fi
 
   # Header handling:
-  # - explicit format header: label,mode,guesser_model,secret_model,judge_model
-  # - pool format header:     label,mode,models,judge_model
+  # - explicit format header: label,mode,guesser_model,secret_model
+  # - pool format header:     label,mode,models
   if [ "${label}" = "label" ]; then
     continue
   fi
 
-  # Pool row if 4th field is empty: label,mode,models,judge_model
-  if [ -n "${label}" ] && [ -n "${mode}" ] && [ -n "${guesser}" ] && [ -z "${judge}" ]; then
+  # Pool row if 4th field is empty: label,mode,models
+  if [ -n "${label}" ] && [ -n "${mode}" ] && [ -n "${guesser}" ] && [ -z "${secret}" ]; then
     models_csv="${guesser}"
-    judge_model="${secret}"
 
     IFS=';' read -r -a model_list <<< "${models_csv}"
     for gm in "${model_list[@]}"; do
@@ -95,7 +93,7 @@ while IFS=',' read -r label mode guesser secret judge; do
 
         run_label="${label}_g$(basename "${gm}")_s$(basename "${sm}")"
         run_tag="${TAG_PREFIX}_${run_label}_$(date +%F_%H%M%S)"
-        wrapper_job_id=$(submit_wrapper "${mode}" "${gm}" "${sm}" "${judge_model}" "${run_tag}")
+        wrapper_job_id=$(submit_wrapper "${mode}" "${gm}" "${sm}" "${run_tag}")
         prev_wrapper_job_id="${wrapper_job_id}"
 
         echo "Submitted config=${run_label} wrapper_job_id=${wrapper_job_id} run_tag=${run_tag}"
@@ -104,9 +102,9 @@ while IFS=',' read -r label mode guesser secret judge; do
     continue
   fi
 
-  # Explicit row: label,mode,guesser_model,secret_model,judge_model
+  # Explicit row: label,mode,guesser_model,secret_model
   run_tag="${TAG_PREFIX}_${label}_$(date +%F_%H%M%S)"
-  wrapper_job_id=$(submit_wrapper "${mode}" "${guesser}" "${secret}" "${judge}" "${run_tag}")
+  wrapper_job_id=$(submit_wrapper "${mode}" "${guesser}" "${secret}" "${run_tag}")
   prev_wrapper_job_id="${wrapper_job_id}"
 
   echo "Submitted config=${label} wrapper_job_id=${wrapper_job_id} run_tag=${run_tag}"

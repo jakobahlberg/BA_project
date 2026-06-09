@@ -53,17 +53,16 @@ MODE                  standard or tool
 PROMPT_VARIANT        default or fewshot
 GUESSER_MODEL         Hugging Face model id for the guesser
 SECRET_MODEL          Hugging Face model id for the keeper
-JUDGE_MODEL           model used by the verifier/evaluation pipeline
 EXPERIMENT_SEED       random seed
 ```
 
-In the Slurm grid workflow, `MODE`, `GUESSER_MODEL`, `SECRET_MODEL`, and `JUDGE_MODEL` are normally set automatically from a model config CSV.
+In the Slurm grid workflow, `MODE`, `GUESSER_MODEL`, and `SECRET_MODEL` are normally set automatically from a model config CSV.
 
 For example:
 
 ```csv
-label,mode,models,judge_model
-qwen_main,tool,Qwen/Qwen3-1.7B;Qwen/Qwen3-8B,Qwen/Qwen3-8B
+label,mode,models
+qwen_main,tool,Qwen/Qwen3-1.7B;Qwen/Qwen3-8B
 ```
 
 Here the second column sets `MODE=tool`.
@@ -76,6 +75,13 @@ PROMPT_VARIANT=fewshot
 
 Without this flag, the default prompt is used, even if the run name contains `fewshot`.
 
+## Install requirements
+Before running the experiment, you should install the requirements:
+
+```
+pip install -r requirements.txt
+```
+
 ## Running One Experiment
 
 Example single run:
@@ -83,8 +89,7 @@ Example single run:
 ```bash
 MODE=tool \
 GUESSER_MODEL="Qwen/Qwen3-1.7B" \
-SECRET_MODEL="Qwen/Qwen3-8B" \
-JUDGE_MODEL="Qwen/Qwen3-8B" \
+SECRET_MODEL="Qwen/Qwen3-1.7B" \
 EXPERIMENT_SEED=1 \
 python3 run.py
 ```
@@ -95,8 +100,7 @@ Few-shot version:
 PROMPT_VARIANT=fewshot \
 MODE=tool \
 GUESSER_MODEL="Qwen/Qwen3-1.7B" \
-SECRET_MODEL="Qwen/Qwen3-8B" \
-JUDGE_MODEL="Qwen/Qwen3-8B" \
+SECRET_MODEL="Qwen/Qwen3-1.7B" \
 EXPERIMENT_SEED=1 \
 python3 run.py
 ```

@@ -1,16 +1,3 @@
-"""
-run.py
-──────
-Single entry point for all game modes.
-
-Configure the run in config.py, then execute:
-    python3 run.py
-
-The MODE flag in config.py selects which secrets and game class to use:
-    "standard" — no tools (golden retriever, python snake, ...)
-    "tool"     — same secrets with USE_HINT and WEB_SEARCH tools enabled
-"""
-
 from __future__ import annotations
 
 import os
