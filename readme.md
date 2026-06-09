@@ -1,4 +1,4 @@
-# Does Size Predict Behaviour?
+# Does Size Predict Behavior?
 
 Tool Use in Small Language Model Agents
 
